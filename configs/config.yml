@@ -1,0 +1,8 @@
+Screen:
+  width: 800
+  height: 775
+
+Common:
+  fps: 60
+
+MainMenu:

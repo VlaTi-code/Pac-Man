@@ -1,0 +1,7 @@
+attrs
+flake8
+mypy
+pydocstyle
+pygame
+pyproject-flake8
+PyYAML
