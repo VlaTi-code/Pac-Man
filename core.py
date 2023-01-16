@@ -6,7 +6,7 @@ from typing import Any, Callable
 import attr
 import pygame
 
-from sprites import *  # noqa
+from sprites import CursorSprite
 from utils import *    # noqa
 
 
@@ -26,36 +26,25 @@ __all__ = (
 )
 
 
-class ResourceManager:  # TODO: separate Singleton into another utils.decorator
-    __instance = None
-
-    def __new__(cls, *args: Any, **kwargs: Any):
-        if cls.__instance is None:
-            cls.__instance = super(ResourceManager, cls).__new__(cls, *args, *kwargs)
-            cls.__instance.__initialized = False
-        return cls.__instance
-
+@singleton
+class ResourceManager:
     def __init__(self, config_path: str | Path = 'configs/config.yml'):
-        if not self.__initialized:
-            logger.warning('ResourceManager initialization')
+        logger.warning('ResourceManager initialization')
+        pygame.init()
 
-            self.fonts: dict[str, Font] = {}
-            self.images: dict[str, Image] = {}
-            self.sounds: dict[str, Sound] = {}
-            self.sprites: dict[str, Sprite] = {}
-            self.config = parse_config(config_path)
+        self.images: dict[str, Image] = {}
+        self.sounds: dict[str, Sound] = {}
+        self.sprites: dict[str, Sprite] = {}
+        self.config = parse_config(config_path)
 
-            pygame.init()
-            screen_params = self.config['Screen']
-            screen_size = screen_params['width'], screen_params['height']
-            pygame.display.set_mode(screen_size)
+        screen_params = self.config['Screen']
+        screen_size = screen_params['width'], screen_params['height']
+        pygame.display.set_mode(screen_size)
+        pygame.mouse.set_visible(False)
 
-            self._load_folder('fonts', self.fonts, load_font)
-            self._load_folder('images', self.images, load_image)
-            self._load_folder('sounds', self.sounds, load_sound)
-            self._load_folder('sprites', self.sprites, load_sprite)
-
-            self.__initialized = True
+        self._load_folder('images', self.images, load_image)
+        # self._load_folder('sounds', self.sounds, load_sound)
+        self._load_folder('sprites', self.sprites, load_sprite)
 
     def _load_folder(self,
                      folder_name: str | Path,
@@ -76,11 +65,10 @@ class ResourceManager:  # TODO: separate Singleton into another utils.decorator
         if self.__initialized:
             return
 
-    def get_font(self, filename: str) -> Font:
-        return self.fonts[filename]
+    def get_font(self, name: str, size: int) -> Font:
+        return pygame.font.SysFont(name, size)
 
     def get_image(self, filename: str) -> Image:
-        print(self.images.keys(), filename, filename in self.images)
         return self.images[filename]
 
     def get_sound(self, filename: str) -> Sound:
@@ -103,15 +91,16 @@ class BaseRoom:
     sprites = attr.ib(factory=pygame.sprite.Group)
 
     background_name: str | Path = None
-    # TODO: cursor?
+    cursor: CursorSprite = attr.ib(factory=CursorSprite)
 
     def __attrs_post_init__(self):
         manager = ResourceManager()
         background = manager.get_sprite(os.path.join('backgrounds', self.background_name))
         self.sprites.add(background)
+        self.sprites.add(self.cursor)
 
     def handle_event(self, event: Event | None = None) -> None:
-        pass
+        self.sprites.update(event)
 
     def set_next_room(self, next_room: 'BaseRoom') -> None:
         self.next_room = next_room
@@ -120,7 +109,7 @@ class BaseRoom:
         return self.next_room
 
     def step(self, delta_time: float) -> None:
-        pass
+        self.cursor.step(delta_time)
 
     def render(self, screen: pygame.Surface) -> None:
         self.sprites.draw(screen)

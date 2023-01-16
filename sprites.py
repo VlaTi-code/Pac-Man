@@ -3,7 +3,7 @@ from typing import Any, Callable
 import attr
 import pygame
 
-from utils import ignore_callback, LEFT_MB
+from utils import LEFT_MB, ignore_callback, singleton
 
 
 __all__ = (
@@ -11,13 +11,13 @@ __all__ = (
     'AnimatedSprite',
     'ButtonSprite',
     'CursorSprite',
-    'Particle',
 )
 
 
 Callback = Callable
 Event = pygame.event.EventType
 Image = pygame.surface.Surface
+Sound = pygame.mixer.Sound
 Sprite = pygame.sprite.Sprite
 
 
@@ -80,7 +80,6 @@ class ButtonSprite(DiscreteSprite):
             num_rows=1,
             xy=xy,
         )
-
         self.rect = self.image.get_rect(topleft=xy)
 
         self.handle_escape = handle_escape
@@ -88,8 +87,6 @@ class ButtonSprite(DiscreteSprite):
 
     def update(self, event: Event | None = None) -> None:
         if event is None:
-            collides = self.rect.collidepoint(pygame.mouse.get_pos())
-            self._show_frame(int(collides))
             return
 
         match event.type:
@@ -99,18 +96,45 @@ class ButtonSprite(DiscreteSprite):
             case pygame.MOUSEBUTTONUP:
                 if event.button == LEFT_MB and self.rect.collidepoint(event.pos):
                     self.on_click()
+            case pygame.MOUSEMOTION:
+                collides = self.rect.collidepoint(pygame.mouse.get_pos())
+                self._show_frame(int(collides))
             case _:
                 pass
 
 
+@singleton
 @attr.s(slots=True, kw_only=True)
-class CursorSprite(DiscreteSprite):
-    # probably a singleton
-    # TODO: probably animated, not discrete
-    pass
+class CursorSprite(AnimatedSprite):
+    sound: Sound = attr.ib(default=None, init=None)
+    is_on: bool = attr.ib(default=False, init=None)
 
+    def __attrs_post_init__(self):
+        from core import ResourceManager
 
-@attr.s(slots=True, kw_only=True)
-class Particle(Sprite):
-    # TODO: implement if necessary
-    pass
+        manager = ResourceManager()
+        # self.sound = manager.get_sound('click.wav')
+
+    def step(self, delta_time: float) -> None:
+        if self.is_on:
+            self.elapsed += delta_time
+            while self.elapsed >= self.delay:
+                self.elapsed -= self.delay
+                self._show_next()
+                if not self.frame_idx:
+                    self.is_on = False
+
+    def update(self, event: Event | None = None) -> None:
+        if event.type is None:
+            return
+
+        match event.type:
+            case pygame.MOUSEMOTION:
+                self.rect = self.image.get_rect(topleft=event.pos)
+            case pygame.MOUSEBUTTONUP:
+                if event.button == LEFT_MB:
+                    # self.sound.stop()
+                    # self.sound.play()
+                    self.is_on = True
+                    self.elapsed = 0
+                    self._show_frame(0)

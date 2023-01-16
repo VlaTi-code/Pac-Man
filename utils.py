@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 import random
 import sys
-import typing
+from typing import Any
 
 import pygame
 import yaml
@@ -20,6 +20,7 @@ __all__ = (
     'init_from_config',
 
     'ignore_callback',
+    'singleton',
 
     'get_random',
     'roll_dice',
@@ -51,7 +52,7 @@ def init_from_config(config, cls: type):
     return cls(**config.get(cls.__name__, {}))
 
 
-def ignore_callback(*args: typing.Any, **kwargs: typing.Any) -> None:
+def ignore_callback(*args: Any, **kwargs: Any) -> None:
     pass
 
 
@@ -122,3 +123,13 @@ def load_sprite(path: str | Path,
 
 def load_font(path: str | Path) -> Font:
     raise NotImplementedError()
+
+
+def singleton(cls: type) -> type:
+    instances: dict[type, Any] = {}
+
+    def wrapper(*args: Any, **kwargs: Any):
+        if cls not in instances:
+            instances[cls] = cls(*args, **kwargs)
+        return instances[cls]
+    return wrapper

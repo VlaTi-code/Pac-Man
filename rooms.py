@@ -9,15 +9,17 @@ Event = pygame.event.EventType
 
 @attr.s(slots=True, kw_only=True)
 class BaseMenu(BaseRoom):
-    buttons = attr.ib(factory=pygame.sprite.Group)  # TODO: list[BaseButton] + for loops?
+    buttons = attr.ib(factory=list)
 
     def handle_event(self, event: Event | None = None) -> None:
         super().handle_event(event)
-        self.buttons.update(event)
+        for button in self.buttons:
+            button.update(event)
 
     def render(self, screen: pygame.Surface) -> None:
         super().render(screen)
-        self.buttons.draw(screen)
+        for button in self.buttons:
+            button.draw(screen)
 
 
 @attr.s(slots=True, kw_only=True)
@@ -27,13 +29,16 @@ class MainMenu(BaseMenu):
     def __attrs_post_init__(self):
         import buttons
 
-        self.buttons.add(buttons.PlayButton(room=self))
-        self.buttons.add(buttons.SetttingsButton(room=self))
-        self.buttons.add(buttons.SkinsButton(room=self))
-        self.buttons.add(buttons.AboutButton(room=self))
-        self.buttons.add(buttons.QuitButton(room=self))
+        screen = pygame.display.get_surface()
+        _, height = screen.get_size()
 
-        # TODO: position buttons on the screen
+        self.buttons = [
+            buttons.PlayButton(room=self, xy=(15, height - 265)),
+            buttons.SettingsButton(room=self, xy=(15, height - 215)),
+            buttons.SkinsButton(room=self, xy=(15, height - 165)),
+            buttons.AboutButton(room=self, xy=(15, height - 115)),
+            buttons.QuitButton(room=self, xy=(15, height - 65)),
+        ]
 
 
 @attr.s(slots=True, kw_only=True)
@@ -42,9 +47,39 @@ class LevelMenu(BaseMenu):
 
     def __attrs_post_init__(self):
         import buttons
+        import levels
 
-        self.buttons.add(buttons.BackButton(room=self))
-        # TODO: + level buttons
+        screen = pygame.display.get_surface()
+        width, height = screen.get_size()
+
+        self.buttons = [
+            buttons.BackButton(room=self, xy=(15, height - 65)),
+
+            buttons.LevelButton(
+                room=self,
+                next_room_type=levels.LevelOne,
+                level_idx=1,
+                xy=(width // 2 - 75, height // 2 - 75),
+            ),
+            buttons.LevelButton(
+                room=self,
+                next_room_type=levels.LevelTwo,
+                level_idx=2,
+                xy=(width // 2 + 25, height // 2 - 75),
+            ),
+            buttons.LevelButton(
+                room=self,
+                next_room_type=levels.LevelThree,
+                level_idx=3,
+                xy=(width // 2 - 75, height // 2 + 25),
+            ),
+            buttons.LevelButton(
+                room=self,
+                next_room_type=levels.LevelFour,
+                level_idx=4,
+                xy=(width // 2 + 25, height // 2 + 25),
+            ),
+        ]
 
 
 @attr.s(slots=True, kw_only=True)
@@ -54,7 +89,12 @@ class SettingsMenu(BaseMenu):
     def __attrs_post_init__(self):
         import buttons
 
-        self.buttons.add(buttons.BackButton(room=self))
+        screen = pygame.display.get_surface()
+        _, height = screen.get_size()
+
+        self.buttons = [
+            buttons.BackButton(room=self, xy=(15, height - 65)),
+        ]
 
 
 @attr.s(slots=True, kw_only=True)
@@ -64,7 +104,12 @@ class SkinsMenu(BaseMenu):
     def __attrs_post_init__(self):
         import buttons
 
-        self.buttons.add(buttons.BackButton(room=self))
+        screen = pygame.display.get_surface()
+        _, height = screen.get_size()
+
+        self.buttons = [
+            buttons.BackButton(room=self, xy=(15, height - 65)),
+        ]
 
 
 @attr.s(slots=True, kw_only=True)
@@ -74,18 +119,29 @@ class AboutMenu(BaseMenu):
     def __attrs_post_init__(self):
         import buttons
 
-        self.buttons.add(buttons.BackButton(room=self))
+        screen = pygame.display.get_surface()
+        _, height = screen.get_size()
+
+        self.buttons = [
+            buttons.BackButton(room=self, xy=(15, height - 65)),
+        ]
 
 
 @attr.s(slots=True, kw_only=True)
-class LevelRoom(BaseRoom):
-    # TODO
-    # back button
+class LevelRoom(BaseMenu):
+    # TODO: base level configuration
     # level map - Graph?
     # player
     # AI npcs
 
     def __attrs_post_init__(self):
         import buttons
+
+        screen = pygame.display.get_surface()
+        width, height = screen.get_size()
+
+        self.buttons = [
+            buttons.BackButton(room=self, xy=(15, height - 65)),
+        ]
 
         # ...
