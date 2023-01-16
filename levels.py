@@ -13,4 +13,5 @@ class LevelOne(LevelRoom):
 
 
 def load_level(path: str | Path) -> LevelRoom:
+    # TODO: add levels/ to resources and manager | beware circular imports!
     raise NotImplementedError()

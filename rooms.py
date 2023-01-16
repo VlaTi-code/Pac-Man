@@ -1,7 +1,7 @@
 import attr
 import pygame
 
-from core import *     # noqa
+from core import *  # noqa
 
 
 Event = pygame.event.EventType
@@ -9,7 +9,7 @@ Event = pygame.event.EventType
 
 @attr.s(slots=True, kw_only=True)
 class BaseMenu(BaseRoom):
-    buttons = attr.ib(factory=pygame.sprite.Group)
+    buttons = attr.ib(factory=pygame.sprite.Group)  # TODO: list[BaseButton] + for loops?
 
     def handle_event(self, event: Event | None = None) -> None:
         super().handle_event(event)
@@ -33,6 +33,8 @@ class MainMenu(BaseMenu):
         self.buttons.add(buttons.AboutButton(room=self))
         self.buttons.add(buttons.QuitButton(room=self))
 
+        # TODO: position buttons on the screen
+
 
 @attr.s(slots=True, kw_only=True)
 class LevelMenu(BaseMenu):
@@ -42,7 +44,7 @@ class LevelMenu(BaseMenu):
         import buttons
 
         self.buttons.add(buttons.BackButton(room=self))
-        # + level buttons
+        # TODO: + level buttons
 
 
 @attr.s(slots=True, kw_only=True)
@@ -77,6 +79,7 @@ class AboutMenu(BaseMenu):
 
 @attr.s(slots=True, kw_only=True)
 class LevelRoom(BaseRoom):
+    # TODO
     # back button
     # level map - Graph?
     # player

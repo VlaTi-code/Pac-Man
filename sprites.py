@@ -106,11 +106,11 @@ class ButtonSprite(DiscreteSprite):
 @attr.s(slots=True, kw_only=True)
 class CursorSprite(DiscreteSprite):
     # probably a singleton
-    # probably animated, not discrete
+    # TODO: probably animated, not discrete
     pass
 
 
 @attr.s(slots=True, kw_only=True)
 class Particle(Sprite):
-    # implement if necessary
+    # TODO: implement if necessary
     pass

@@ -27,6 +27,7 @@ class TransitionButton(BaseButton):
 
     next_room_type: type = None
     source_name: str = None
+    handle_escape: bool = False
 
     def on_click(self):
         next_room = self.next_room_type()
@@ -35,7 +36,11 @@ class TransitionButton(BaseButton):
     def __attrs_post_init__(self):
         manager = ResourceManager()
         sheet = manager.get_image(self.source_name)
-        self.sprite = ButtonSprite(sheet=sheet, on_click=self.on_click)
+        self.sprite = ButtonSprite(
+            sheet=sheet,
+            on_click=self.on_click,
+            handle_escape=self.handle_escape,
+        )
 
 
 @attr.s(slots=True, kw_only=True)
@@ -66,6 +71,7 @@ class AboutButton(TransitionButton):
 class QuitButton(TransitionButton):
     next_room_type: type = type(None)
     source_name: str = 'quit_btn.png'
+    handle_escape = True
 
 
 @attr.s(slots=True, kw_only=True)

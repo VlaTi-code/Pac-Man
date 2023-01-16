@@ -26,7 +26,7 @@ __all__ = (
 )
 
 
-class ResourceManager:
+class ResourceManager:  # TODO: separate Singleton into another utils.decorator
     __instance = None
 
     def __new__(cls, *args: Any, **kwargs: Any):
@@ -61,7 +61,7 @@ class ResourceManager:
                      folder_name: str | Path,
                      target_dict: dict[str, Any],
                      loader: Callable) -> None:
-        resources_path = self.config.get('resources_path', 'resources')
+        resources_path = self.config.get('resources_path', 'resources')  # TODO: populate resources/
         path = os.path.join(resources_path, folder_name)
         if os.path.isdir(path):
             for cur_dir, _, files in os.walk(path):
@@ -103,6 +103,7 @@ class BaseRoom:
     sprites = attr.ib(factory=pygame.sprite.Group)
 
     background_name: str | Path = None
+    # TODO: cursor?
 
     def __attrs_post_init__(self):
         manager = ResourceManager()
