@@ -6,6 +6,15 @@ import pygame
 from utils import ignore_callback, LEFT_MB
 
 
+__all__ = (
+    'DiscreteSprite',
+    'AnimatedSprite',
+    'ButtonSprite',
+    'CursorSprite',
+    'Particle',
+)
+
+
 Callback = Callable
 Event = pygame.event.EventType
 Image = pygame.surface.Surface

@@ -1,3 +1,4 @@
+import logging
 import os
 from pathlib import Path
 import random
@@ -6,6 +7,28 @@ import typing
 
 import pygame
 import yaml
+
+
+logger = logging.getLogger(__name__)
+
+
+__all__ = (
+    'TOP_LEFT_CORNER',
+    'LEFT_MB',
+
+    'parse_config',
+    'init_from_config',
+
+    'ignore_callback',
+
+    'get_random',
+    'roll_dice',
+
+    'load_font',
+    'load_image',
+    'load_sound',
+    'load_sprite',
+)
 
 
 Color = tuple[int, int, int]
@@ -61,20 +84,18 @@ def render_text(screen: Image,
     screen.blit(rendered, (x - width // 2, y - height // 2))
 
 
-def load_sound(filename: str | Path) -> Sound:
-    path = resource_path(os.path.join('sounds', filename))
+def load_sound(path: str | Path) -> Sound:
     if not os.path.isfile(path):
-        print(f'Файл со звуком {path} не найден.')
+        logger.error('Файл со звуком %s не найден.', path)
         sys.exit(1)
     return Sound(path)
 
 
-def load_image(filename: str | Path,
+def load_image(path: str | Path,
                colorkey: Color | int | None = None,
                ) -> Image:
-    path = resource_path(os.path.join('images', filename))
     if not os.path.isfile(path):
-        print(f'Файл с изображением {path} не найден.')
+        logger.error('Файл со изображением %s не найден.', path)
         sys.exit(1)
     image = pygame.image.load(path)
 
@@ -89,11 +110,15 @@ def load_image(filename: str | Path,
     return image
 
 
-def load_sprite(filename: str | Path,
+def load_sprite(path: str | Path,
                 colorkey: Color | int | None = None,
                 xy: tuple[int, int] = (0, 0),
                 ) -> Sprite:
     sprite = Sprite()
-    sprite.image = load_image(filename, colorkey)
+    sprite.image = load_image(path, colorkey)
     sprite.rect = sprite.image.get_rect(topleft=xy)
     return sprite
+
+
+def load_font(path: str | Path) -> Font:
+    raise NotImplementedError()

@@ -1,39 +1,88 @@
 import attr
 import pygame
 
-from core import *  # noqa
+from core import *     # noqa
+
+
+Event = pygame.event.EventType
 
 
 @attr.s(slots=True, kw_only=True)
 class BaseMenu(BaseRoom):
-    pass
+    buttons = attr.ib(factory=pygame.sprite.Group)
+
+    def handle_event(self, event: Event | None = None) -> None:
+        super().handle_event(event)
+        self.buttons.update(event)
+
+    def render(self, screen: pygame.Surface) -> None:
+        super().render(screen)
+        self.buttons.draw(screen)
 
 
 @attr.s(slots=True, kw_only=True)
 class MainMenu(BaseMenu):
-    pass
+    background_name = 'main_menu_back.png'
+
+    def __attrs_post_init__(self):
+        import buttons
+
+        self.buttons.add(buttons.PlayButton(room=self))
+        self.buttons.add(buttons.SetttingsButton(room=self))
+        self.buttons.add(buttons.SkinsButton(room=self))
+        self.buttons.add(buttons.AboutButton(room=self))
+        self.buttons.add(buttons.QuitButton(room=self))
 
 
 @attr.s(slots=True, kw_only=True)
 class LevelMenu(BaseMenu):
-    pass
+    background_name = 'level_menu_back.png'
+
+    def __attrs_post_init__(self):
+        import buttons
+
+        self.buttons.add(buttons.BackButton(room=self))
+        # + level buttons
 
 
 @attr.s(slots=True, kw_only=True)
 class SettingsMenu(BaseMenu):
-    pass
+    background_name = 'settings_back.png'
+
+    def __attrs_post_init__(self):
+        import buttons
+
+        self.buttons.add(buttons.BackButton(room=self))
 
 
 @attr.s(slots=True, kw_only=True)
 class SkinsMenu(BaseMenu):
-    pass
+    background_name = 'skins_back.png'
+
+    def __attrs_post_init__(self):
+        import buttons
+
+        self.buttons.add(buttons.BackButton(room=self))
 
 
 @attr.s(slots=True, kw_only=True)
 class AboutMenu(BaseMenu):
-    pass
+    background_name = 'about_back.png'
+
+    def __attrs_post_init__(self):
+        import buttons
+
+        self.buttons.add(buttons.BackButton(room=self))
 
 
 @attr.s(slots=True, kw_only=True)
 class LevelRoom(BaseRoom):
-    pass
+    # back button
+    # level map - Graph?
+    # player
+    # AI npcs
+
+    def __attrs_post_init__(self):
+        import buttons
+
+        # ...
