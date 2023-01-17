@@ -24,11 +24,14 @@ __all__ = (
 
     'get_random',
     'roll_dice',
+    'draw_text',
+    'draw_sprite',
 
     'load_font',
     'load_image',
     'load_sound',
     'load_sprite',
+    'load_level',
 )
 
 
@@ -72,12 +75,12 @@ def resource_path(relative_path: str | Path) -> Path:
     return Path(os.path.join(base_path, relative_path))
 
 
-def render_text(screen: Image,
-                font: Font,
-                text: str,
-                color: Color | str,
-                pos: tuple[int, int],
-                ) -> None:
+def draw_text(screen: Image,
+              font: Font,
+              text: str,
+              color: Color | str,
+              pos: tuple[int, int],
+              ) -> None:
     eff_color = pygame.Color(color) if isinstance(color, str) else color
     rendered = font.render(text, True, eff_color)
     width, height = rendered.get_rect().size
@@ -125,6 +128,11 @@ def load_font(path: str | Path) -> Font:
     raise NotImplementedError()
 
 
+def load_level(level_map_path: str | Path) -> list[str]:
+    with open(level_map_path, 'r', encoding='utf-8') as file:
+        return [line.rstrip() for line in file]
+
+
 def singleton(cls: type) -> type:
     instances: dict[type, Any] = {}
 
@@ -133,3 +141,7 @@ def singleton(cls: type) -> type:
             instances[cls] = cls(*args, **kwargs)
         return instances[cls]
     return wrapper
+
+
+def draw_sprite(screen: pygame.Surface, sprite: Sprite) -> None:
+    screen.blit(sprite.image, sprite.rect)

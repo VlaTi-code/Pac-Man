@@ -37,9 +37,12 @@ class DiscreteSprite(Sprite):
         self._show_frame(0)
         self.rect.move_ip(*xy)
 
+    def _refresh_image(self) -> None:
+        self.image = self.frames[self.frame_idx]
+
     def _show_frame(self, idx: int) -> None:
         self.frame_idx = idx
-        self.image = self.frames[self.frame_idx]
+        self._refresh_image()
 
     def _switch_frame(self) -> None:
         self._show_frame((self.frame_idx + 1) % len(self.frames))
@@ -53,6 +56,13 @@ class DiscreteSprite(Sprite):
                 location = (self.rect.w * col, self.rect.h * row)
                 self.frames.append(sheet.subsurface(pygame.Rect(location, self.rect.size)))
 
+    def scale_sprite(self, size: tuple[int, int]) -> None:
+        self.frames = [
+            pygame.transform.scale(frame, size)
+            for frame in self.frames
+        ]
+        self._refresh_image()
+
 
 class AnimatedSprite(DiscreteSprite):
     def __init__(self, *args: Any, delay: float = 1, **kwargs: Any):
@@ -65,7 +75,7 @@ class AnimatedSprite(DiscreteSprite):
         self.elapsed += delta_time
         while self.elapsed >= self.delay:
             self.elapsed -= self.delay
-            self._show_next()
+            self._switch_frame()
 
 
 class ButtonSprite(DiscreteSprite):
@@ -106,8 +116,8 @@ class ButtonSprite(DiscreteSprite):
 @singleton
 @attr.s(slots=True, kw_only=True)
 class CursorSprite(AnimatedSprite):
-    sound: Sound = attr.ib(default=None, init=None)
-    is_on: bool = attr.ib(default=False, init=None)
+    sound: Sound = attr.ib(default=None, init=False)
+    is_on: bool = attr.ib(default=False, init=False)
 
     def __attrs_post_init__(self):
         from core import ResourceManager
@@ -120,7 +130,7 @@ class CursorSprite(AnimatedSprite):
             self.elapsed += delta_time
             while self.elapsed >= self.delay:
                 self.elapsed -= self.delay
-                self._show_next()
+                self._switch_frame()
                 if not self.frame_idx:
                     self.is_on = False
 

@@ -7,7 +7,7 @@ import attr
 import pygame
 
 from sprites import CursorSprite
-from utils import *    # noqa
+from utils import *  # noqa
 
 
 logger = logging.getLogger(__name__)
@@ -35,6 +35,7 @@ class ResourceManager:
         self.images: dict[str, Image] = {}
         self.sounds: dict[str, Sound] = {}
         self.sprites: dict[str, Sprite] = {}
+        self.levels: dict[str, list[str]] = {}
         self.config = parse_config(config_path)
 
         screen_params = self.config['Screen']
@@ -45,12 +46,14 @@ class ResourceManager:
         self._load_folder('images', self.images, load_image)
         # self._load_folder('sounds', self.sounds, load_sound)
         self._load_folder('sprites', self.sprites, load_sprite)
+        self._load_folder('levels', self.levels, load_level)
 
     def _load_folder(self,
                      folder_name: str | Path,
                      target_dict: dict[str, Any],
                      loader: Callable) -> None:
-        resources_path = self.config.get('resources_path', 'resources')  # TODO: populate resources/
+        # TODO: populate resources/
+        resources_path = self.config.get('resources_path', 'resources')
         path = os.path.join(resources_path, folder_name)
         if os.path.isdir(path):
             for cur_dir, _, files in os.walk(path):
@@ -61,21 +64,20 @@ class ResourceManager:
         else:
             logger.warning('Folder %s is missing', folder_name)
 
-    def __attrs_post_init__(self):
-        if self.__initialized:
-            return
+    def get_font(self, font_name: str, size: int) -> Font:
+        return pygame.font.SysFont(font_name, size)
 
-    def get_font(self, name: str, size: int) -> Font:
-        return pygame.font.SysFont(name, size)
+    def get_image(self, image_name: str) -> Image:
+        return self.images[image_name]
 
-    def get_image(self, filename: str) -> Image:
-        return self.images[filename]
+    def get_sound(self, sound_name: str) -> Sound:
+        return self.sounds[sound_name]
 
-    def get_sound(self, filename: str) -> Sound:
-        return self.sounds[filename]
+    def get_sprite(self, sprite_name: str) -> Sprite:
+        return self.sprites[sprite_name]
 
-    def get_sprite(self, filename: str) -> Sprite:
-        return self.sprites[filename]
+    def get_level_map(self, level_name: str) -> list[str]:
+        return self.levels[level_name]
 
     def get_config(self) -> dict[str, Any]:
         return self.config
@@ -96,6 +98,7 @@ class BaseRoom:
     def __attrs_post_init__(self):
         manager = ResourceManager()
         background = manager.get_sprite(os.path.join('backgrounds', self.background_name))
+        # TODO: add background images
         self.sprites.add(background)
         self.sprites.add(self.cursor)
 

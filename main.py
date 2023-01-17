@@ -22,7 +22,7 @@ def main():
             else:
                 room.handle_event(event)
 
-        delta_time = clock.tick(common_params['fps'])
+        delta_time = clock.tick(common_params['fps']) / 1000  # seconds
         room.step(delta_time)
 
         screen.fill('black')

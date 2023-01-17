@@ -9,6 +9,8 @@ from rooms import *  # noqa
 
 @attr.s(slots=True, kw_only=True)
 class LevelOne(LevelRoom):
+    level_name = 'level_1.txt'
+
     pass
 
 

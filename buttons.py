@@ -1,10 +1,12 @@
+import os
+
 import attr
 import pygame
 
 from core import *  # noqa
 import rooms
 from sprites import ButtonSprite
-from utils import render_text
+from utils import draw_text, draw_sprite
 
 
 Event = pygame.event.EventType
@@ -19,7 +21,7 @@ class BaseButton(Sprite):
         self.sprite.update(event)
 
     def draw(self, screen: pygame.Surface) -> None:
-        screen.blit(self.sprite.image, self.sprite.rect)
+        draw_sprite(screen, self.sprite)
 
 
 @attr.s(slots=True, kw_only=True)
@@ -37,7 +39,7 @@ class TransitionButton(BaseButton):
 
     def __attrs_post_init__(self):
         manager = ResourceManager()
-        sheet = manager.get_image(self.source_name)
+        sheet = manager.get_image(os.path.join('buttons', self.source_name))
         self.sprite = ButtonSprite(
             sheet=sheet,
             xy=self.xy,
@@ -99,4 +101,4 @@ class LevelButton(TransitionButton):
         pos = pygame.mouse.get_pos()
         rect = self.sprite.rect
         color = 'white' if rect.collidepoint(pos) else 'gray'
-        render_text(screen, font, str(self.level_idx), color, rect.center)
+        draw_text(screen, font, str(self.level_idx), color, rect.center)
