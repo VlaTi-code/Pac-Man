@@ -11,24 +11,17 @@ from rooms import *  # noqa
 class LevelOne(LevelRoom):
     level_name = 'level_1.txt'
 
-    pass
-
 
 @attr.s(slots=True, kw_only=True)
 class LevelTwo(LevelRoom):
-    pass
+    level_name = 'level_2.txt'
 
 
 @attr.s(slots=True, kw_only=True)
 class LevelThree(LevelRoom):
-    pass
+    level_name = 'level_3.txt'
 
 
 @attr.s(slots=True, kw_only=True)
 class LevelFour(LevelRoom):
-    pass
-
-
-def load_level(path: str | Path) -> LevelRoom:
-    # TODO: add levels/ to resources and manager | beware circular imports!
-    raise NotImplementedError()
+    level_name = 'level_4.txt'
