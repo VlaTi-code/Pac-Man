@@ -32,17 +32,18 @@ class Board:
         for y, line in enumerate(lines):
             for x, char in enumerate(line):
                 vertex = Vertex(x, y)
+                if char != '#':
+                    for shift in shifts:
+                        neighbour = vertex + shift
+                        if (0 <= neighbour.x < size_x and
+                                0 <= neighbour.y < size_y and
+                                lines[neighbour.y][neighbour.x] in ('.', ' ')):
+                            self.graph.add_edge(vertex, neighbour)
+
                 match char:
-                    case '.' | ' ':
-                        for shift in shifts:
-                            neighbour = vertex + shift
-                            if (0 <= neighbour.x < size_x and
-                                    0 <= neighbour.y < size_y and
-                                    lines[neighbour.y][neighbour.x] in ('.', ' ')):
-                                self.graph.add_edge(vertex, neighbour)
-                        if char == '.':
-                            self.pellets[y][x] = True
-                            self.total_pellets += 1
+                    case '.':
+                        self.pellets[y][x] = True
+                        self.total_pellets += 1
                     case 'P':
                         vector = vertex.to_vector()
                         self.pacman = init_from_config(config, Pacman, spawn_pos=vector)
@@ -53,7 +54,7 @@ class Board:
                             init_from_config(config, Blinky, spawn_pos=vector),
                             init_from_config(config, Pinky, spawn_pos=vector),
                             init_from_config(config, Inky, spawn_pos=vector),
-                            init_from_config(config, Clide, spawn_pos=vector),
+                            init_from_config(config, Clyde, spawn_pos=vector),
                         ])
                     case '#':
                         pass
@@ -84,6 +85,7 @@ class Board:
 
         for player in self.players:
             player.scale_sprite((self.cell_size, self.cell_size))
+            player.store_init_frames()
 
     def has_won(self) -> bool:
         return not self.total_pellets
@@ -96,16 +98,38 @@ class Board:
 
     def step(self, delta_time: float) -> None:
         for player in self.players:
+            player.update_target(self.graph, self.pacman.real_pos)
             player.step(delta_time)
-        # TODO: check pacman position: eat pellets
+
+        if self.pacman.is_aligned():
+            x, y = map(round, self.pacman.real_pos)
+            if self.pellets[y][x]:
+                self.pellets[y][x] = False
+                self.total_pellets -= 1
+                self.pacman.score += 1
+
+        if not self.pacman.is_invincible():
+            for player in self.players:
+                if player != self.pacman and pygame.sprite.collide_mask(self.pacman, player):
+                    self.pacman.get_caught()
+                    self.pacman.scale_sprite((self.cell_size, self.cell_size))
 
     def render(self, screen: pygame.Surface) -> None:
         screen.blit(self.level_background, self.topleft)
+
         for y, row in enumerate(self.pellets):
             for x, has_pellet in enumerate(row):
                 if has_pellet:
                     pos = self.topleft + self.cell_size * Vector2(x + 0.5, y + 0.5)
                     pygame.draw.circle(screen, 'yellow', pos, radius=4)
+
         for player in self.players:
             player.rect.topleft = self.topleft + self.cell_size * player.real_pos
             draw_sprite(screen, player)
+
+        if self.pacman.is_invincible():
+            color = pygame.Color('blue')
+            # color.a = 64
+            topleft = self.topleft + self.cell_size * self.pacman.real_pos
+            radius = self.cell_size / 2
+            pygame.draw.circle(screen, color, topleft + Vector2(radius), radius, width=2)

@@ -10,7 +10,7 @@ class Vertex:
     y: int = attr.ib(converter=round)
 
     @staticmethod
-    def from_vector(self, vector: pygame.Vector2) -> 'Vertex':
+    def from_vector(vector: pygame.Vector2) -> 'Vertex':
         return Vertex(vector.x, vector.y)
 
     def to_vector(self) -> pygame.Vector2:
@@ -23,19 +23,19 @@ class Vertex:
 
 @attr.s(slots=True, kw_only=True)
 class UndirectedGraph:
-    edges: dict[Vertex, list[Vertex]] = attr.ib(factory=lambda: defaultdict(list), init=False)
+    edges: dict[Vertex, set[Vertex]] = attr.ib(factory=lambda: defaultdict(set), init=False)
 
     @property
     def size(self) -> int:
         return len(self.edges)
 
     def add_edge(self, from_: Vertex, to: Vertex) -> None:
-        self.edges[from_].append(to)
+        self.edges[from_].add(to)
         if from_ != to:
-            self.edges[to].append(from_)
+            self.edges[to].add(from_)
 
-    def __getitem__(self, vertex: Vertex) -> list[Vertex]:
-        return self.edges.get(vertex, [])
+    def __getitem__(self, vertex: Vertex) -> set[Vertex]:
+        return self.edges.get(vertex, set())
 
 
 @attr.s(slots=True, kw_only=True)

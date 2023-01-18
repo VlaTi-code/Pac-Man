@@ -80,7 +80,7 @@ Player: &player_defaults
 Player-AnimatedSprite:
   num_cols: 4
   num_rows: 1
-  delay: 0.25
+  delay: 0.16
 
 Blinky:
   <<: *player_defaults
@@ -94,11 +94,12 @@ Inky:
   <<: *player_defaults
   sheet_name: "inky.png"
 
-Clide:
+Clyde:
   <<: *player_defaults
-  sheet_name: "clide.png"
+  sheet_name: "clyde.png"
 
 Pacman:
   <<: *player_defaults
   sheet_name: "pacman.png"
   lives: 3
+  invincible_time: 3

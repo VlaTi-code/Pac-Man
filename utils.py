@@ -45,7 +45,7 @@ Sprite = pygame.sprite.Sprite
 
 TOP_LEFT_CORNER = -1
 LEFT_MB = 1
-EPS = 1e-6
+EPS = 1e-2
 
 
 def parse_config(path: str | Path) -> Any:

@@ -17,6 +17,7 @@ __all__ = (
 Callback = Callable
 Event = pygame.event.EventType
 Image = pygame.surface.Surface
+Mask = pygame.mask.Mask
 Sound = pygame.mixer.Sound
 Sprite = pygame.sprite.Sprite
 
@@ -28,17 +29,21 @@ class DiscreteSprite(Sprite):
                  num_cols: int = 1,
                  num_rows: int = 1,
                  xy: tuple[int, int] = (0, 0),
+                 compute_masks: bool = False,
                  **kwargs: Any):
         super().__init__(*args, **kwargs)
 
         self.frames: list[Image] = []
-        self._cut_sheet(sheet, num_cols, num_rows)
+        self.masks: list[Mask] = []
+        self._cut_sheet(sheet, num_cols, num_rows, compute_masks=compute_masks)
 
         self._show_frame(0)
         self.rect.move_ip(*xy)
 
     def _refresh_image(self) -> None:
         self.image = self.frames[self.frame_idx]
+        if self.masks:
+            self.mask = self.masks[self.frame_idx]
 
     def _show_frame(self, idx: int) -> None:
         self.frame_idx = idx
@@ -47,14 +52,17 @@ class DiscreteSprite(Sprite):
     def _switch_frame(self) -> None:
         self._show_frame((self.frame_idx + 1) % len(self.frames))
 
-    def _cut_sheet(self, sheet: Image, num_cols: int, num_rows: int) -> None:
+    def _cut_sheet(self, sheet: Image, num_cols: int, num_rows: int, compute_masks: bool) -> None:
         self.rect = pygame.Rect(
             0, 0, sheet.get_width() // num_cols, sheet.get_height() // num_rows,
         )
         for row in range(num_rows):
             for col in range(num_cols):
                 location = (self.rect.w * col, self.rect.h * row)
-                self.frames.append(sheet.subsurface(pygame.Rect(location, self.rect.size)))
+                frame = sheet.subsurface(pygame.Rect(location, self.rect.size))
+                self.frames.append(frame)
+                if compute_masks:
+                    self.masks.append(pygame.mask.from_surface(frame))
 
     def scale_sprite(self, size: tuple[int, int]) -> None:
         self.frames = [

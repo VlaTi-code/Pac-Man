@@ -6,7 +6,7 @@ import pygame
 
 from core import *   # noqa
 from logic import *  # noqa
-from utils import init_from_config
+from utils import draw_text, init_from_config
 
 
 Event = pygame.event.EventType
@@ -128,14 +128,13 @@ class LevelRoom(BaseMenu):
         manager = ResourceManager()
         font = manager.get_font('Chessmaster X', 80)
         if self.is_paused:
-            render_text(screen, font, 'PAUSE', 'white', screen.get_rect().center)
+            draw_text(screen, font, 'PAUSE', 'white', screen.get_rect().center)
         elif self.board.has_won():
-            render_text(screen, font, 'VICTORY!', 'green', screen.get_rect().center)
+            draw_text(screen, font, 'VICTORY!', 'green', screen.get_rect().center)
         elif self.board.has_lost():
-            render_text(screen, font, 'YOU LOST', 'red', screen.get_rect().center)
+            draw_text(screen, font, 'YOU LOST', 'red', screen.get_rect().center)
 
     def step(self, delta_time: float) -> None:
         super().step(delta_time)
-        # TODO: add win / lose state
         if not self.is_paused and not self.board.is_game_over():
             self.board.step(delta_time)
