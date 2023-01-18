@@ -1,6 +1,104 @@
+# Main settings
 Screen:
   width: 800
-  height: 775
+  height: 800
 
 Common:
   fps: 60
+
+# Rooms
+MainMenu:
+  background_name: "main_menu_back.png"
+
+LevelMenu:
+  background_name: "level_menu_back.png"
+
+SettingsMenu:
+  background_name: "settings_back.png"
+
+SkinsMenu:
+  background_name: "skins_back.png"
+
+AboutMenu:
+  background_name: "about_back.png"
+
+# Buttons
+PlayButton:
+  source_name: "play_btn.png"
+  xy: [15, 535]
+
+SettingsButton:
+  source_name: "settings_btn.png"
+  xy: [15, 585]
+
+SkinsButton:
+  source_name: "skins_btn.png"
+  xy: [15, 635]
+
+AboutButton:
+  source_name: "about_btn.png"
+  xy: [15, 685]
+
+QuitButton:
+  source_name: "quit_btn.png"
+  handle_escape: true
+  xy: [15, 735]
+
+BackButton:
+  source_name: "back_btn.png"
+  handle_escape: true
+  xy: [15, 735]
+
+# Level buttons
+LevelButton: &level_button_defaults
+  source_name: "level_btn.png"
+
+LevelOneButton:
+  <<: *level_button_defaults
+  xy: [340, 340]
+
+LevelTwoButton:
+  <<: *level_button_defaults
+  xy: [410, 340]
+
+LevelThreeButton:
+  <<: *level_button_defaults
+  xy: [340, 410]
+
+LevelFourButton:
+  <<: *level_button_defaults
+  xy: [410, 410]
+
+# Gameplay
+Board:
+  topleft: [20, 20]
+  cell_size: 25
+
+Player: &player_defaults
+  speed: 2
+
+Player-AnimatedSprite:
+  num_cols: 4
+  num_rows: 1
+  delay: 0.25
+
+Blinky:
+  <<: *player_defaults
+  sheet_name: "blinky.png"
+
+Pinky:
+  <<: *player_defaults
+  sheet_name: "pinky.png"
+
+Inky:
+  <<: *player_defaults
+  sheet_name: "inky.png"
+
+Clide:
+  <<: *player_defaults
+  sheet_name: "clide.png"
+
+Pacman:
+  <<: *player_defaults
+  sheet_name: "pacman.png"
+  lives: 3

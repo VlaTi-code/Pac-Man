@@ -52,7 +52,6 @@ class ResourceManager:
                      folder_name: str | Path,
                      target_dict: dict[str, Any],
                      loader: Callable) -> None:
-        # TODO: populate resources/
         resources_path = self.config.get('resources_path', 'resources')
         path = os.path.join(resources_path, folder_name)
         if os.path.isdir(path):
@@ -89,16 +88,18 @@ class ResourceManager:
 
 @attr.s(slots=True, kw_only=True)
 class BaseRoom:
-    next_room: 'BaseRoom' = attr.ib(default=attr.Factory(lambda self: self, takes_self=True))
-    sprites = attr.ib(factory=pygame.sprite.Group)
+    background_name: str | Path = attr.ib(default=None)
 
-    background_name: str | Path = None
-    cursor: CursorSprite = attr.ib(factory=CursorSprite)
+    next_room: 'BaseRoom' = attr.ib(
+        default=attr.Factory(lambda self: self, takes_self=True),
+        init=False,
+    )
+    sprites = attr.ib(factory=pygame.sprite.Group, init=False)
+    cursor: CursorSprite = attr.ib(factory=CursorSprite, init=False)
 
     def __attrs_post_init__(self):
         manager = ResourceManager()
         background = manager.get_sprite(os.path.join('backgrounds', self.background_name))
-        # TODO: add background images
         self.sprites.add(background)
         self.sprites.add(self.cursor)
 

@@ -1,4 +1,5 @@
 import os
+from typing import Any
 
 import attr
 import pygame
@@ -6,7 +7,7 @@ import pygame
 from core import *  # noqa
 import rooms
 from sprites import ButtonSprite
-from utils import draw_text, draw_sprite
+from utils import draw_text, draw_sprite, init_from_config
 
 
 Event = pygame.event.EventType
@@ -27,15 +28,20 @@ class BaseButton(Sprite):
 @attr.s(slots=True, kw_only=True)
 class TransitionButton(BaseButton):
     room: BaseRoom = attr.ib()
-
-    next_room_type: BaseRoom = None
-    source_name: str = None
+    source_name: str = attr.ib()
     xy: tuple[int, int] = attr.ib()
-    handle_escape: bool = False
+    handle_escape: bool = attr.ib(default=False)
 
-    def on_click(self):
-        next_room = self.next_room_type()
+    next_room_type: type = None
+
+    def _set_next_room(self, **kwargs: Any) -> None:
+        manager = ResourceManager()
+        config = manager.get_config()
+        next_room = init_from_config(config, self.next_room_type, **kwargs)
         self.room.set_next_room(next_room)
+
+    def on_click(self) -> None:
+        self._set_next_room()
 
     def __attrs_post_init__(self):
         manager = ResourceManager()
@@ -50,53 +56,43 @@ class TransitionButton(BaseButton):
 
 @attr.s(slots=True, kw_only=True)
 class PlayButton(TransitionButton):
-    next_room_type: BaseRoom = rooms.LevelMenu
-    source_name: str = 'play_btn.png'
+    next_room_type: type = rooms.LevelMenu
 
 
 @attr.s(slots=True, kw_only=True)
 class SettingsButton(TransitionButton):
-    next_room_type: BaseRoom = rooms.SettingsMenu
-    source_name: str = 'settings_btn.png'
+    next_room_type: type = rooms.SettingsMenu
 
 
 @attr.s(slots=True, kw_only=True)
 class SkinsButton(TransitionButton):
-    next_room_type: BaseRoom = rooms.SkinsMenu
-    source_name: str = 'skins_btn.png'
+    next_room_type: type = rooms.SkinsMenu
 
 
 @attr.s(slots=True, kw_only=True)
 class AboutButton(TransitionButton):
-    next_room_type: BaseRoom = rooms.AboutMenu
-    source_name: str = 'about_btn.png'
+    next_room_type: type = rooms.AboutMenu
 
 
 @attr.s(slots=True, kw_only=True)
 class QuitButton(TransitionButton):
-    next_room_type: BaseRoom = type(None)
-    source_name: str = 'quit_btn.png'
-    handle_escape: bool = True
+    next_room_type: type = type(None)
 
 
 @attr.s(slots=True, kw_only=True)
 class BackButton(TransitionButton):
-    next_room_type: BaseRoom = rooms.MainMenu
-    source_name: str = 'back_btn.png'
+    next_room_type: type = rooms.MainMenu
 
 
 @attr.s(slots=True, kw_only=True)
 class LevelButton(TransitionButton):
-    next_room_type: BaseRoom = attr.ib()
-    source_name: str = 'level_btn.png'
-
-    level_idx: int = attr.ib()
+    level_idx: int = None
 
     def draw(self, screen: pygame.Surface) -> None:
         super().draw(screen)
 
         manager = ResourceManager()
-        font = manager.get_font('Chessmaster X', 24)
+        font = manager.get_font('Chessmaster X', 36)
 
         pos = pygame.mouse.get_pos()
         rect = self.sprite.rect

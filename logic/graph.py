@@ -53,6 +53,7 @@ class BFSData:
 
 
 def bfs(graph: UndirectedGraph,
+        *,
         sources: list[Vertex],
         target: Vertex,
         src_dists: list[float] = None) -> BFSData:

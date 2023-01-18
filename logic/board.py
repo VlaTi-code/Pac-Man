@@ -5,23 +5,26 @@ from pygame import Vector2
 from core import ResourceManager
 from .graph import *   # noqa
 from .player import *  # noqa
-from utils import draw_sprite
+from utils import draw_sprite, init_from_config
 
 
 @attr.s(slots=True, kw_only=True)
 class Board:
-    graph: UndirectedGraph = attr.ib(factory=UndirectedGraph, init=False)
-    pellets: list[list[bool]] = attr.ib(init=False)
-    total_pellets: int = attr.ib(default=0, init=False)
-    players: list[Player] = attr.ib(factory=list, init=False)
-    pacman: Pacman = attr.ib(init=False)
-    level_background: pygame.Surface = attr.ib(init=False)
-
     topleft: Vector2 = attr.ib(converter=Vector2)
-    cell_size: int = attr.ib(default=25)  # config.yml for Board?
+    cell_size: int = attr.ib()
     level_name: str = attr.ib()
 
+    graph: UndirectedGraph = attr.ib(factory=UndirectedGraph, init=False)
+    pellets: list[list[bool]] = attr.ib(factory=list, init=False)
+    total_pellets: int = attr.ib(default=0, init=False)
+    players: list[Player] = attr.ib(factory=list, init=False)
+    pacman: Pacman = attr.ib(default=None, init=False)
+    level_background: pygame.Surface = attr.ib(default=None, init=False)
+
     def _parse_level_map(self, lines: list[str]) -> None:
+        manager = ResourceManager()
+        config = manager.get_config()
+
         shifts = tuple(map(Vector2, ((-1, 0), (1, 0), (0, -1), (0, 1))))
         size_x, size_y = len(lines[0]), len(lines)
         self.pellets = [[False] * size_x for _ in range(size_y)]
@@ -41,14 +44,16 @@ class Board:
                             self.pellets[y][x] = True
                             self.total_pellets += 1
                     case 'P':
-                        self.pacman = Pacman(spawn_pos=vertex.to_vector())
+                        vector = vertex.to_vector()
+                        self.pacman = init_from_config(config, Pacman, spawn_pos=vector)
                         self.players.append(self.pacman)
                     case 'S':
+                        vector = vertex.to_vector()
                         self.players.extend([
-                            Blinky(spawn_pos=vertex.to_vector()),
-                            Pinky(spawn_pos=vertex.to_vector()),
-                            Inky(spawn_pos=vertex.to_vector()),
-                            Clide(spawn_pos=vertex.to_vector()),
+                            init_from_config(config, Blinky, spawn_pos=vector),
+                            init_from_config(config, Pinky, spawn_pos=vector),
+                            init_from_config(config, Inky, spawn_pos=vector),
+                            init_from_config(config, Clide, spawn_pos=vector),
                         ])
                     case '#':
                         pass
@@ -61,7 +66,7 @@ class Board:
             for x, char in enumerate(line):
                 match char:
                     case '#':
-                        # draw walls
+                        # TODO: draw walls
                         pygame.draw.rect(
                             self.level_background,
                             'brown',
@@ -92,7 +97,7 @@ class Board:
     def step(self, delta_time: float) -> None:
         for player in self.players:
             player.step(delta_time)
-        # check pacman position: eat pellets
+        # TODO: check pacman position: eat pellets
 
     def render(self, screen: pygame.Surface) -> None:
         screen.blit(self.level_background, self.topleft)

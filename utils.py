@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 __all__ = (
     'TOP_LEFT_CORNER',
     'LEFT_MB',
+    'EPS',
 
     'parse_config',
     'init_from_config',
@@ -44,19 +45,30 @@ Sprite = pygame.sprite.Sprite
 
 TOP_LEFT_CORNER = -1
 LEFT_MB = 1
+EPS = 1e-6
 
 
-def parse_config(path: str | Path):
+def parse_config(path: str | Path) -> Any:
     with open(path) as file:
         return yaml.safe_load(file)
 
 
-def init_from_config(config, cls: type):
-    return cls(**config.get(cls.__name__, {}))
+def init_from_config(config, cls: type, **kwargs: Any) -> Any:
+    return cls(**config.get(cls.__name__, {}), **kwargs)
 
 
 def ignore_callback(*args: Any, **kwargs: Any) -> None:
     pass
+
+
+def singleton(cls: type) -> type:
+    instances: dict[type, Any] = {}
+
+    def wrapper(*args: Any, **kwargs: Any):
+        if cls not in instances:
+            instances[cls] = cls(*args, **kwargs)
+        return instances[cls]
+    return wrapper
 
 
 def get_random(from_: float, to: float) -> float:
@@ -88,9 +100,13 @@ def draw_text(screen: Image,
     screen.blit(rendered, (x - width // 2, y - height // 2))
 
 
+def draw_sprite(screen: pygame.Surface, sprite: Sprite) -> None:
+    screen.blit(sprite.image, sprite.rect)
+
+
 def load_sound(path: str | Path) -> Sound:
     if not os.path.isfile(path):
-        logger.error('Файл со звуком %s не найден.', path)
+        logger.error('Sound source %s not found.', path)
         sys.exit(1)
     return Sound(path)
 
@@ -99,7 +115,7 @@ def load_image(path: str | Path,
                colorkey: Color | int | None = None,
                ) -> Image:
     if not os.path.isfile(path):
-        logger.error('Файл со изображением %s не найден.', path)
+        logger.error('Image source %s not found.', path)
         sys.exit(1)
     image = pygame.image.load(path)
 
@@ -131,17 +147,3 @@ def load_font(path: str | Path) -> Font:
 def load_level(level_map_path: str | Path) -> list[str]:
     with open(level_map_path, 'r', encoding='utf-8') as file:
         return [line.rstrip() for line in file]
-
-
-def singleton(cls: type) -> type:
-    instances: dict[type, Any] = {}
-
-    def wrapper(*args: Any, **kwargs: Any):
-        if cls not in instances:
-            instances[cls] = cls(*args, **kwargs)
-        return instances[cls]
-    return wrapper
-
-
-def draw_sprite(screen: pygame.Surface, sprite: Sprite) -> None:
-    screen.blit(sprite.image, sprite.rect)
