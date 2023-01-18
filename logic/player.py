@@ -2,7 +2,7 @@ from enum import IntEnum
 import os
 from pathlib import Path
 
-import attrs
+import attr
 import pygame
 from pygame import Vector2
 

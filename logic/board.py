@@ -35,9 +35,9 @@ class Board:
                 if char != '#':
                     for shift in shifts:
                         neighbour = vertex + shift
-                        if (0 <= neighbour.x < size_x and
-                                0 <= neighbour.y < size_y and
-                                lines[neighbour.y][neighbour.x] in ('.', ' ')):
+                        if (0 <= neighbour.x < size_x
+                                and 0 <= neighbour.y < size_y
+                                and lines[neighbour.y][neighbour.x] in ('.', ' ')):
                             self.graph.add_edge(vertex, neighbour)
 
                 match char:

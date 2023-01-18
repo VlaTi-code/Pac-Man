@@ -77,7 +77,7 @@ class AnimatedSprite(DiscreteSprite):
         super().__init__(*args, **kwargs)
 
         self.delay = delay
-        self.elapsed = 0
+        self.elapsed: float = 0
 
     def step(self, delta_time: float) -> None:
         self.elapsed += delta_time

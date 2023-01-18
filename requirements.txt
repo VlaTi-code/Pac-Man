@@ -5,3 +5,4 @@ pydocstyle
 pygame
 pyproject-flake8
 PyYAML
+types-PyYAML

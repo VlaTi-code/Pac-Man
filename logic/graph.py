@@ -44,7 +44,7 @@ class BFSData:
     parent: dict[Vertex, Vertex] = attr.ib(factory=dict)
 
     def is_visited(self, vertex: Vertex) -> bool:
-        return to in self.dist
+        return vertex in self.dist
 
     def process_edge(self, from_: Vertex, to: Vertex, weight: float = 1) -> None:
         if not self.is_visited(to):
