@@ -119,19 +119,30 @@ class LevelRoom(BaseMenu):
 
         self.board = init_from_config(config, Board, level_name=self.level_name)
 
+    def handle_event(self, event: Event | None = None) -> None:
+        super().handle_event(event)
+        if event.type == pygame.KEYDOWN:
+            if self.is_paused:
+                self.is_paused = False
+            elif event.key == pygame.K_p:
+                self.is_paused = True
+            else:
+                pass
+
     def render(self, screen: pygame.Surface) -> None:
         super().render(screen)
 
         self.board.render(screen)
 
         manager = ResourceManager()
-        font = manager.get_font('Chessmaster X', 80)
+        font = manager.get_font('Chessmaster X', 48)
+        center = screen.get_rect().center
         if self.is_paused:
-            draw_text(screen, font, 'PAUSE', 'white', screen.get_rect().center)
+            draw_text(screen, font, 'PAUSE (press any key to continue)', 'white', center)
         elif self.board.has_won():
-            draw_text(screen, font, 'VICTORY!', 'green', screen.get_rect().center)
+            draw_text(screen, font, 'VICTORY!', 'green', center)
         elif self.board.has_lost():
-            draw_text(screen, font, 'YOU LOST', 'red', screen.get_rect().center)
+            draw_text(screen, font, 'YOU LOST!', 'red', center)
 
     def step(self, delta_time: float) -> None:
         super().step(delta_time)
