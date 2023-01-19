@@ -54,6 +54,7 @@ class Player(AnimatedSprite):
             pygame.transform.rotate(frame, angle)
             for frame in self.init_frames
         ]
+        self.compute_masks()
 
     def _get_direction(self, *, normalize: bool = False) -> Vector2:
         direction = self.target_pos - self.real_pos

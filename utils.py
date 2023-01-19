@@ -92,12 +92,17 @@ def draw_text(screen: Image,
               text: str,
               color: Color | str,
               pos: tuple[int, int],
+              *,
+              centered=True,
               ) -> None:
     eff_color = pygame.Color(color) if isinstance(color, str) else color
     rendered = font.render(text, True, eff_color)
-    width, height = rendered.get_rect().size
     x, y = pos
-    screen.blit(rendered, (x - width // 2, y - height // 2))
+    if centered:
+        width, height = rendered.get_rect().size
+        x -= width // 2
+        y -= height // 2
+    screen.blit(rendered, (x, y))
 
 
 def draw_sprite(screen: pygame.Surface, sprite: Sprite) -> None:

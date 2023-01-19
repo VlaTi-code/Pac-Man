@@ -35,7 +35,9 @@ class DiscreteSprite(Sprite):
 
         self.frames: list[Image] = []
         self.masks: list[Mask] = []
-        self._cut_sheet(sheet, num_cols, num_rows, compute_masks=compute_masks)
+        self._cut_sheet(sheet, num_cols, num_rows)
+        if compute_masks:
+            self.compute_masks()
 
         self._show_frame(0)
         self.rect.move_ip(*xy)
@@ -52,7 +54,7 @@ class DiscreteSprite(Sprite):
     def _switch_frame(self) -> None:
         self._show_frame((self.frame_idx + 1) % len(self.frames))
 
-    def _cut_sheet(self, sheet: Image, num_cols: int, num_rows: int, compute_masks: bool) -> None:
+    def _cut_sheet(self, sheet: Image, num_cols: int, num_rows: int) -> None:
         self.rect = pygame.Rect(
             0, 0, sheet.get_width() // num_cols, sheet.get_height() // num_rows,
         )
@@ -61,8 +63,12 @@ class DiscreteSprite(Sprite):
                 location = (self.rect.w * col, self.rect.h * row)
                 frame = sheet.subsurface(pygame.Rect(location, self.rect.size))
                 self.frames.append(frame)
-                if compute_masks:
-                    self.masks.append(pygame.mask.from_surface(frame))
+
+    def compute_masks(self) -> None:
+        self.masks = [
+            pygame.mask.from_surface(frame)
+            for frame in self.frames
+        ]
 
     def scale_sprite(self, size: tuple[int, int]) -> None:
         self.frames = [

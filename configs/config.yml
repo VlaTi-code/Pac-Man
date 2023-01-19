@@ -71,8 +71,8 @@ LevelFourButton:
 
 # Gameplay
 Board:
-  topleft: [20, 20]
-  cell_size: 25
+  topleft: [15, 25]
+  cell_size: 20
 
 Player: &player_defaults
   speed: 2

@@ -1,3 +1,5 @@
+from math import pi
+
 import attr
 import pygame
 from pygame import Vector2
@@ -5,7 +7,7 @@ from pygame import Vector2
 from core import ResourceManager
 from .graph import *   # noqa
 from .player import *  # noqa
-from utils import draw_sprite, init_from_config
+from utils import draw_sprite, draw_text, init_from_config
 
 
 @attr.s(slots=True, kw_only=True)
@@ -29,6 +31,14 @@ class Board:
         size_x, size_y = len(lines[0]), len(lines)
         self.pellets = [[False] * size_x for _ in range(size_y)]
 
+        # '#' - wall
+        # '.' - pellet
+        # ' ' - empty cell
+        # BPIC - Blinky / Pinky / Inky / Clyde
+        # S - Pacman spawn
+        # W - warp
+        # F - power pellet
+
         for y, line in enumerate(lines):
             for x, char in enumerate(line):
                 vertex = Vertex(x, y)
@@ -40,41 +50,134 @@ class Board:
                                 and lines[neighbour.y][neighbour.x] in ('.', ' ')):
                             self.graph.add_edge(vertex, neighbour)
 
+                vector = vertex.to_vector()
                 match char:
                     case '.':
                         self.pellets[y][x] = True
                         self.total_pellets += 1
-                    case 'P':
-                        vector = vertex.to_vector()
+                    case 'S':
                         self.pacman = init_from_config(config, Pacman, spawn_pos=vector)
                         self.players.append(self.pacman)
-                    case 'S':
-                        vector = vertex.to_vector()
-                        self.players.extend([
+                    case 'B':
+                        self.players.append(
                             init_from_config(config, Blinky, spawn_pos=vector),
+                        )
+                    case 'P':
+                        self.players.append(
                             init_from_config(config, Pinky, spawn_pos=vector),
+                        )
+                    case 'I':
+                        self.players.append(
                             init_from_config(config, Inky, spawn_pos=vector),
+                        )
+                    case 'C':
+                        self.players.append(
                             init_from_config(config, Clyde, spawn_pos=vector),
-                        ])
-                    case '#':
+                        )
+                    case '#' | ' ':
                         pass
+                    case 'W':  # warps
+                        ...
+                    case 'F':  # power pellets
+                        ...
+                    case _:
+                        raise ValueError(f'Unknown cell type char: {char}')
+
+    @staticmethod
+    def _has_wall(lines: list[str], x: int, y: int) -> bool:
+        size_x, size_y = len(lines[0]), len(lines)
+        return 0 <= x < size_x and 0 <= y < size_y and lines[y][x] == '#'
+
+    def _draw_horizontal_line(self, topleft: Vector2) -> None:
+        pygame.draw.line(
+            self.level_background,
+            'blue',
+            start_pos=topleft + Vector2(0, self.cell_size / 2),
+            end_pos=topleft + Vector2(self.cell_size, self.cell_size / 2),
+            width=2,
+        )
+
+    def _draw_vertical_line(self, topleft: Vector2) -> None:
+        pygame.draw.line(
+            self.level_background,
+            'blue',
+            start_pos=topleft + Vector2(self.cell_size / 2, 0),
+            end_pos=topleft + Vector2(self.cell_size / 2, self.cell_size),
+            width=2,
+        )
+
+    def _draw_arc(self, center: Vector2, start_angle: float) -> None:
+        pygame.draw.arc(
+            self.level_background,
+            'blue',
+            (center - Vector2(self.cell_size / 2), Vector2(self.cell_size)),
+            start_angle,
+            start_angle + pi / 2,
+            width=2,
+        )
 
     def _init_level_background(self, lines: list[str]) -> None:
         size_x, size_y = len(lines[0]), len(lines)
-
         self.level_background = pygame.Surface(self.cell_size * Vector2(size_x, size_y))
+        cell_vector = Vector2(self.cell_size)
+
+        # Chessboard-like coloring
+        for x in range(size_x):
+            for y in range(size_y):
+                pygame.draw.rect(
+                    self.level_background,
+                    (128, 128, 128) if (x + y) % 2 else (224, 224, 224),
+                    (self.cell_size * Vector2(x, y), cell_vector),
+                )
+
+        shifts = ((-1, 0), (1, 0), (0, -1), (0, 1))
         for y, line in enumerate(lines):
             for x, char in enumerate(line):
-                match char:
-                    case '#':
-                        # TODO: draw walls
-                        pygame.draw.rect(
-                            self.level_background,
-                            'brown',
-                            (self.cell_size * Vector2(x, y), Vector2(self.cell_size)),
-                        )
-                    case _:
+                if char != '#':
+                    continue
+
+                topleft = self.cell_size * Vector2(x, y)
+
+                if (self._has_wall(lines, x - 1, y) and self._has_wall(lines, x + 1, y)
+                        and not (self._has_wall(lines, x, y - 1) and self._has_wall(lines, x, y + 1))):
+                    self._draw_horizontal_line(topleft)
+                elif (self._has_wall(lines, x, y - 1) and self._has_wall(lines, x, y + 1)
+                        and not (self._has_wall(lines, x - 1, y) and self._has_wall(lines, x + 1, y))):
+                    self._draw_vertical_line(topleft)
+                elif (self._has_wall(lines, x + 1, y) and self._has_wall(lines, x, y + 1)
+                        and not self._has_wall(lines, x - 1, y) and not self._has_wall(lines, x, y - 1)):
+                    # top left corner
+                    self._draw_arc(center=topleft + cell_vector, start_angle=pi / 2)
+                elif (self._has_wall(lines, x - 1, y) and self._has_wall(lines, x, y + 1)
+                        and not self._has_wall(lines, x + 1, y) and not self._has_wall(lines, x, y - 1)):
+                    # top right corner
+                    self._draw_arc(center=topleft + Vector2(0, self.cell_size), start_angle=0)
+                elif (self._has_wall(lines, x + 1, y) and self._has_wall(lines, x, y - 1)
+                        and not self._has_wall(lines, x - 1, y) and not self._has_wall(lines, x, y + 1)):
+                    # bottom left corner
+                    self._draw_arc(center=topleft + Vector2(self.cell_size, 0), start_angle=pi)
+                elif (self._has_wall(lines, x - 1, y) and self._has_wall(lines, x, y - 1)
+                        and not self._has_wall(lines, x + 1, y) and not self._has_wall(lines, x, y + 1)):
+                    # bottom right corner
+                    self._draw_arc(center=topleft, start_angle=3 * pi / 2)
+                elif all(self._has_wall(lines, x + dx, y + dy) for (dx, dy) in shifts):
+                    if not self._has_wall(lines, x + 1, y + 1):
+                        # top left corner
+                        self._draw_arc(center=topleft + cell_vector, start_angle=pi / 2)
+                    elif not self._has_wall(lines, x - 1, y + 1):
+                        # top right corner
+                        self._draw_arc(center=topleft + Vector2(0, self.cell_size), start_angle=0)
+                    elif not self._has_wall(lines, x + 1, y - 1):
+                        # bottom left corner
+                        self._draw_arc(center=topleft + Vector2(self.cell_size, 0), start_angle=pi)
+                    elif not self._has_wall(lines, x - 1, y - 1):
+                        # bottom right corner
+                        self._draw_arc(center=topleft, start_angle=3 * pi / 2)
+                    else:
                         pass
+                else:
+                    pass
+
 
     def __attrs_post_init__(self):
         manager = ResourceManager()
@@ -86,6 +189,7 @@ class Board:
         for player in self.players:
             player.scale_sprite((self.cell_size, self.cell_size))
             player.store_init_frames()
+            player.compute_masks()
 
     def has_won(self) -> bool:
         return not self.total_pellets
@@ -129,7 +233,23 @@ class Board:
 
         if self.pacman.is_invincible():
             color = pygame.Color('blue')
-            # color.a = 64
             topleft = self.topleft + self.cell_size * self.pacman.real_pos
             radius = self.cell_size / 2
             pygame.draw.circle(screen, color, topleft + Vector2(radius), radius, width=2)
+
+        manager = ResourceManager()
+        _, height = screen.get_size()
+        font = manager.get_font('Chessmaster X', 28)
+        draw_text(
+            screen,
+            font,
+            f'Score: {self.pacman.score}',
+            'white',
+            (225, height - 50),
+            centered=False,
+        )
+
+        life_sprite = manager.get_sprite('life.png')
+        for idx in range(self.pacman.lives):
+            life_sprite.rect.topleft = (350 + 60 * idx, height - 65)
+            draw_sprite(screen, life_sprite)
