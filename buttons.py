@@ -8,7 +8,7 @@ import pygame
 from core import *  # noqa
 import rooms
 from sprites import ButtonSprite
-from utils import draw_text, draw_sprite, init_from_config
+from utils import draw_text, init_from_config
 
 
 Event = pygame.event.EventType  # type: ignore

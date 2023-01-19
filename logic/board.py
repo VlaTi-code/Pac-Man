@@ -65,7 +65,7 @@ class Board:
                         neighbour = vertex + shift
                         if (0 <= neighbour.x < size_x
                                 and 0 <= neighbour.y < size_y
-                                and lines[neighbour.y][neighbour.x] in ('.', ' ')):
+                                and lines[neighbour.y][neighbour.x] != '#'):
                             self.graph.add_edge(vertex, neighbour)
 
                 vector = vertex.to_vector()
@@ -177,7 +177,7 @@ class Board:
             for y in range(size_y):
                 pygame.draw.rect(
                     self.level_background,
-                    (128, 128, 128) if (x + y) % 2 else (224, 224, 224),
+                    (168,) * 3 if (x + y) % 2 else (224,) * 3,
                     (self.cell_size * Vector2(x, y), cell_vector),
                 )
 

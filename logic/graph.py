@@ -3,7 +3,6 @@
 from collections import defaultdict, deque
 
 import attr
-import pygame
 from pygame.math import Vector2
 
 

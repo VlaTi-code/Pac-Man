@@ -82,6 +82,10 @@ Player-AnimatedSprite:
   num_rows: 1
   delay: 0.16
 
+GhostGangAI:
+  scatter-timer: 7
+  chase-timer: 20
+
 Blinky:
   <<: *player_defaults
   sheet_name: "blinky.png"

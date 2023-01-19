@@ -185,6 +185,9 @@ class LevelRoom(BaseMenu):
             return
 
         if event.type == pygame.KEYDOWN:
+            if self.board.is_game_over():
+                pass
+
             if self.is_paused:
                 self.is_paused = False
             elif event.key == pygame.K_p:

@@ -1,6 +1,6 @@
 '''Ghosts and Pacman implementation'''
 
-from enum import IntEnum
+from enum import Enum, IntEnum
 import os
 from pathlib import Path
 from typing import Sequence
@@ -32,6 +32,36 @@ Image = pygame.surface.Surface
 KeysType = Sequence[bool]
 
 
+def round_vector(vector: Vector2) -> Vector2:
+    '''
+    Round vector components
+
+    :param vector: 2D-vector to round
+    '''
+
+    return Vertex.from_vector(vector).to_vector()
+
+
+def is_zero(vector: Vector2) -> bool:
+    '''
+    Check whether a vector is zero
+
+    :param vector: 2D-vector to check
+    '''
+
+    return vector.x == vector.y == 0
+
+
+def is_almost_zero(vector: Vector2) -> bool:
+    '''
+    Check whether a vector is close to zero
+
+    :param vector: 2D-vector to check
+    '''
+
+    return vector.length_squared() < EPS
+
+
 class LookAtDirection(IntEnum):
     '''Enumerated Player facing directions, represented as angles converted into degrees'''
 
@@ -51,6 +81,8 @@ class Player(AnimatedSprite):
 
     real_pos: Vector2 = attr.ib(default=None, init=False)
     target_pos: Vector2 = attr.ib(default=None, init=False)
+    # direction always stays either zero or normalized, for numerical stability
+    direction: Vector2 = attr.ib(factory=Vector2, init=False)  # type: ignore
     sheet: Image = attr.ib(default=None, init=False)
     init_frames: list[Image] = attr.ib(factory=list, init=False)
 
@@ -89,33 +121,45 @@ class Player(AnimatedSprite):
         ]
         self.compute_masks()
 
-    def _get_direction(self, *, normalize: bool = False) -> Vector2:
-        '''
-        Get current facing direction vector and normalize it optionally
+    def is_aligned(self) -> bool:
+        '''Check whether a player is at the center of a target cell'''
 
-        :param normalize: whether to normalize non-zero direction vector or not
-        '''
+        return is_zero(self.direction)
 
-        direction = self.target_pos - self.real_pos
-        if normalize and direction.length_squared() > EPS:
-            direction.normalize_ip()
-        return direction
+    def precise_align(self) -> None:
+        '''Round player position'''
+
+        self.real_pos = round_vector(self.real_pos)
+
+    def _update_direction(self) -> None:
+        '''Update direction vector according to current target position'''
+
+        offset = self.target_pos - self.real_pos
+        if is_almost_zero(offset):
+            self.precise_align()
+            self.direction = Vector2()
+            return
+
+        if offset.x < 0:
+            self.direction = Vector2(-1, 0)
+        elif offset.x > 0:
+            self.direction = Vector2(1, 0)
+        elif offset.y < 0:
+            self.direction = Vector2(0, -1)
+        elif offset.y > 0:
+            self.direction = Vector2(0, 1)
+        else:
+            assert False, 'Smth went numerically unstable, sorry'
 
     def update_target(self, graph: UndirectedGraph, pacman_pos: Vector2) -> None:
         '''
         Update player target position given the board graph and current Pacman position
 
         :param graph: board graph
-        :param pacman_pos: Pacman intermediate position w.r.t. to board, in cells
+        :param pacman_pos: Pacman intermediate position w.r.t. board, in cells
         '''
 
-        pass
-
-    def is_aligned(self) -> bool:
-        '''Check whether a player is at the center of any cell'''
-
-        direction = self._get_direction()
-        return direction.length_squared() < EPS
+        raise NotImplementedError()
 
     def step(self, delta_time: float) -> None:
         '''
@@ -125,43 +169,82 @@ class Player(AnimatedSprite):
         '''
 
         super().step(delta_time)  # sprite animation
-        if not self.is_aligned():
-            direction = self._get_direction(normalize=True)
-            self.real_pos += self.speed * delta_time * direction
-        else:
-            self.real_pos = Vertex.from_vector(self.target_pos).to_vector()
-            # TODO: sprite shakes and inverses incorrectly :(
+
+        self.real_pos += self.speed * delta_time * self.direction
+
+
+class GhostState(Enum):
+    CHASE = 0
+    SCATTER = 1
+    FRIGHTENED = 2
+    EATEN = 3
 
 
 @attr.s(slots=True, kw_only=True)
-class GhostGangAI(Player):  # TODO: implement AI strategies
+class GhostGangAI(Player):
     '''Base class for all ghosts'''
+
+    state: GhostState = attr.ib(default=GhostState.SCATTER, init=False)
+    state_timer: float = attr.ib(default=0, init=False)
+
+    # TODO: implement AI strategies
+    # restrict opposite moves for AI
 
     def __attrs_post_init__(self) -> None:
         '''Post-initialization'''
 
         super().__attrs_post_init__()
 
+    def _reconstruct_path(self, data: BFSData, target: Vertex) -> Vertex:
+        '''
+        '''
+
+        ...
+
     def _get_bfs_data(self, graph: UndirectedGraph, pacman_pos: Vector2) -> BFSData:
         '''
         Run BFS on the board graph and return BFS output data
 
         :param graph: board graph
-        :param pacman_pos: Pacman intermediate position w.r.t. to board, in cells
+        :param pacman_pos: Pacman intermediate position w.r.t. board, in cells
         '''
 
         target = Vertex.from_vector(pacman_pos)
         if self.is_aligned():
             return bfs(graph, sources=[Vertex.from_vector(self.real_pos)], target=target)
 
-        direction = self._get_direction()
-        norm = direction.length()
+        offset = self.target_pos - self.real_pos
+        norm = offset.length()
+
         sources = [
-            Vertex.from_vector(self.target_pos - direction.normalize()),
+            Vertex.from_vector(self.target_pos - self.direction),
             Vertex.from_vector(self.target_pos),
         ]
         src_dists = [1 - norm, norm]
         return bfs(graph, sources=sources, target=target, src_dists=src_dists)
+
+    def step(self, delta_time: float) -> None:
+        '''
+        Update internal player state after some time elapsed
+
+        :param delta_time: time elapsed, in seconds
+        '''
+
+        super().step(delta_time)
+
+        self.state_timer -= delta_time
+        if self.state_timer < 0:
+            manager = ResourceManager()
+            config = manager.get_config()
+
+            if self.state == GhostState.CHASE:
+                self.state = GhostState.SCATTER
+                self.state_timer = config['GhostGangAI']['scatter-timer']
+            elif self.state == GhostState.SCATTER:
+                self.state = GhostState.CHASE
+                self.state_timer = config['GhostGangAI']['chase-timer']
+            else:
+                pass
 
 
 @attr.s(slots=True, kw_only=True)
@@ -178,10 +261,12 @@ class Blinky(GhostGangAI):
         Update player target position given the board graph and current Pacman position
 
         :param graph: board graph
-        :param pacman_pos: Pacman intermediate position w.r.t. to board, in cells
+        :param pacman_pos: Pacman intermediate position w.r.t. board, in cells
         '''
 
+        data = self._get_bfs_data(graph, pacman_pos)
         ...
+        self._update_direction()
 
 
 @attr.s(slots=True, kw_only=True)
@@ -198,10 +283,12 @@ class Pinky(GhostGangAI):
         Update player target position given the board graph and current Pacman position
 
         :param graph: board graph
-        :param pacman_pos: Pacman intermediate position w.r.t. to board, in cells
+        :param pacman_pos: Pacman intermediate position w.r.t. board, in cells
         '''
 
+        data = self._get_bfs_data(graph, pacman_pos)
         ...
+        self._update_direction()
 
 
 @attr.s(slots=True, kw_only=True)
@@ -218,10 +305,12 @@ class Inky(GhostGangAI):
         Update player target position given the board graph and current Pacman position
 
         :param graph: board graph
-        :param pacman_pos: Pacman intermediate position w.r.t. to board, in cells
+        :param pacman_pos: Pacman intermediate position w.r.t. board, in cells
         '''
 
+        data = self._get_bfs_data(graph, pacman_pos)
         ...
+        self._update_direction()
 
 
 @attr.s(slots=True, kw_only=True)
@@ -238,10 +327,12 @@ class Clyde(GhostGangAI):
         Update player target position given the board graph and current Pacman position
 
         :param graph: board graph
-        :param pacman_pos: Pacman intermediate position w.r.t. to board, in cells
+        :param pacman_pos: Pacman intermediate position w.r.t. board, in cells
         '''
 
+        data = self._get_bfs_data(graph, pacman_pos)
         ...
+        self._update_direction()
 
 
 @attr.s(slots=True, kw_only=True)
@@ -328,23 +419,21 @@ class Pacman(Player):
         :param keys: pygame.key.get_pressed() structure
         '''
 
-        direction = self._get_direction(normalize=True)
-
         if keys[pygame.K_LEFT] or keys[pygame.K_a]:
-            if direction.x == 1:   # right
-                self.target_pos -= direction
+            if self.direction.x == 1:   # right
+                self.target_pos -= self.direction
                 self._rotate_frames(LookAtDirection.LEFT)
         elif keys[pygame.K_RIGHT] or keys[pygame.K_d]:
-            if direction.x == -1:  # left
-                self.target_pos -= direction
+            if self.direction.x == -1:  # left
+                self.target_pos -= self.direction
                 self._rotate_frames(LookAtDirection.RIGHT)
         elif keys[pygame.K_UP] or keys[pygame.K_w]:
-            if direction.y == 1:   # down
-                self.target_pos -= direction
+            if self.direction.y == 1:   # down
+                self.target_pos -= self.direction
                 self._rotate_frames(LookAtDirection.UP)
         elif keys[pygame.K_DOWN] or keys[pygame.K_s]:
-            if direction.y == -1:  # up
-                self.target_pos -= direction
+            if self.direction.y == -1:  # up
+                self.target_pos -= self.direction
                 self._rotate_frames(LookAtDirection.DOWN)
         else:
             pass
@@ -354,11 +443,13 @@ class Pacman(Player):
         Update player target position given the board graph and current Pacman position
 
         :param graph: board graph
-        :param pacman_pos: Pacman intermediate position w.r.t. to board, in cells
+        :param pacman_pos: Pacman intermediate position w.r.t. board, in cells
         '''
 
         keys = pygame.key.get_pressed()
         if self.is_aligned():
             self._init_new_move(keys, graph)
-            return
-        self._reverse_last_move(keys)
+        else:
+            self._reverse_last_move(keys)
+
+        self._update_direction()
