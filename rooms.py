@@ -1,3 +1,5 @@
+'''Room classes'''
+
 from pathlib import Path
 
 import attr
@@ -13,14 +15,28 @@ Event = pygame.event.EventType
 
 @attr.s(slots=True, kw_only=True)
 class BaseMenu(BaseRoom):
+    '''Base class for all rooms with buttons'''
+
     buttons = attr.ib(factory=list)
 
     def handle_event(self, event: Event | None = None) -> None:
+        '''
+        Event handler method
+
+        :param event: an event to handle (optional)
+        '''
+
         super().handle_event(event)
         for button in self.buttons:
             button.update(event)
 
     def render(self, screen: pygame.Surface) -> None:
+        '''
+        Drawing method
+
+        :param screen: a surface to draw the room on
+        '''
+
         super().render(screen)
         for button in self.buttons:
             button.draw(screen)
@@ -28,7 +44,11 @@ class BaseMenu(BaseRoom):
 
 @attr.s(slots=True, kw_only=True)
 class MainMenu(BaseMenu):
+    '''Main menu'''
+
     def __attrs_post_init__(self):
+        '''Post-initialization'''
+
         import buttons
 
         manager = ResourceManager()
@@ -45,7 +65,11 @@ class MainMenu(BaseMenu):
 
 @attr.s(slots=True, kw_only=True)
 class LevelMenu(BaseMenu):
+    '''Menu for choosing a level'''
+
     def __attrs_post_init__(self):
+        '''Post-initialization'''
+
         import buttons
         import levels
 
@@ -63,7 +87,11 @@ class LevelMenu(BaseMenu):
 
 @attr.s(slots=True, kw_only=True)
 class SettingsMenu(BaseMenu):
+    '''Settings menu'''
+
     def __attrs_post_init__(self):
+        '''Post-initialization'''
+
         import buttons
 
         manager = ResourceManager()
@@ -76,7 +104,11 @@ class SettingsMenu(BaseMenu):
 
 @attr.s(slots=True, kw_only=True)
 class SkinsMenu(BaseMenu):
+    '''Menu for choosing skins'''
+
     def __attrs_post_init__(self):
+        '''Post-initialization'''
+
         import buttons
 
         manager = ResourceManager()
@@ -89,7 +121,11 @@ class SkinsMenu(BaseMenu):
 
 @attr.s(slots=True, kw_only=True)
 class AboutMenu(BaseMenu):
+    '''About section'''
+
     def __attrs_post_init__(self):
+        '''Post-initialization'''
+
         import buttons
 
         manager = ResourceManager()
@@ -102,12 +138,16 @@ class AboutMenu(BaseMenu):
 
 @attr.s(slots=True, kw_only=True)
 class LevelRoom(BaseMenu):
+    '''Base class for all level rooms'''
+
     level_name: str | Path = None
 
     board: Board = attr.ib(default=None, init=False)
     is_paused: bool = attr.ib(default=False, init=False)
 
     def __attrs_post_init__(self):
+        '''Post-initialization'''
+
         import buttons
 
         manager = ResourceManager()
@@ -120,6 +160,12 @@ class LevelRoom(BaseMenu):
         self.board = init_from_config(config, Board, level_name=self.level_name)
 
     def handle_event(self, event: Event | None = None) -> None:
+        '''
+        Event handler method
+
+        :param event: an event to handle (optional)
+        '''
+
         super().handle_event(event)
         if event.type == pygame.KEYDOWN:
             if self.is_paused:
@@ -130,6 +176,12 @@ class LevelRoom(BaseMenu):
                 pass
 
     def render(self, screen: pygame.Surface) -> None:
+        '''
+        Drawing method
+
+        :param screen: a surface to draw the room on
+        '''
+
         super().render(screen)
 
         self.board.render(screen)
@@ -145,6 +197,12 @@ class LevelRoom(BaseMenu):
             draw_text(screen, font, 'YOU LOST!', 'red', center)
 
     def step(self, delta_time: float) -> None:
+        '''
+        Update internal room's state after some time elapsed
+
+        :param delta_time: time elapsed, in seconds
+        '''
+
         super().step(delta_time)
         if not self.is_paused and not self.board.is_game_over():
             self.board.step(delta_time)

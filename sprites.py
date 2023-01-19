@@ -1,3 +1,5 @@
+'''Module for custom sprite types and subclasses'''
+
 from typing import Any, Callable
 
 import attr
@@ -23,6 +25,8 @@ Sprite = pygame.sprite.Sprite
 
 
 class DiscreteSprite(Sprite):
+    '''Sprites with several frames which are to switched manually'''
+
     def __init__(self,
                  *args: Any,
                  sheet: Image,
@@ -31,6 +35,16 @@ class DiscreteSprite(Sprite):
                  xy: tuple[int, int] = (0, 0),
                  compute_masks: bool = False,
                  **kwargs: Any):
+        '''
+        Initialization of DiscreteSprite instance
+
+        :param sheet: a surface with table-organized frames
+        :param num_cols: # of columns in a table
+        :param num_rows: # of rows in a table
+        :param xy: sprite top-left corner position
+        :param compute_masks: whether to compute masks or not
+        '''
+
         super().__init__(*args, **kwargs)
 
         self.frames: list[Image] = []
@@ -43,18 +57,40 @@ class DiscreteSprite(Sprite):
         self.rect.move_ip(*xy)
 
     def _refresh_image(self) -> None:
+        '''
+        Helper method for refreshing current frame and mask (if available)
+        '''
+
         self.image = self.frames[self.frame_idx]
         if self.masks:
             self.mask = self.masks[self.frame_idx]
 
     def _show_frame(self, idx: int) -> None:
+        '''
+        Helper method for switching to the frame by index
+
+        :param idx: index of a frame (0-indexed)
+        '''
+
         self.frame_idx = idx
         self._refresh_image()
 
     def _switch_frame(self) -> None:
+        '''
+        Helper method for switching to the next frame in a cycle
+        '''
+
         self._show_frame((self.frame_idx + 1) % len(self.frames))
 
     def _cut_sheet(self, sheet: Image, num_cols: int, num_rows: int) -> None:
+        '''
+        Helper method for cutting the frames out of a table-organized source image
+
+        :param sheet: a surface with table-organized frames
+        :param num_cols: # of columns in a table
+        :param num_rows: # of rows in a table
+        '''
+
         self.rect = pygame.Rect(
             0, 0, sheet.get_width() // num_cols, sheet.get_height() // num_rows,
         )
@@ -65,12 +101,22 @@ class DiscreteSprite(Sprite):
                 self.frames.append(frame)
 
     def compute_masks(self) -> None:
+        '''
+        Computes and stores masks for all frames
+        '''
+
         self.masks = [
             pygame.mask.from_surface(frame)
             for frame in self.frames
         ]
 
     def scale_sprite(self, size: tuple[int, int]) -> None:
+        '''
+        Scales all frames to fit a fixed rectangle shape
+
+        :param size: rectangle shape size
+        '''
+
         self.frames = [
             pygame.transform.scale(frame, size)
             for frame in self.frames
@@ -79,13 +125,27 @@ class DiscreteSprite(Sprite):
 
 
 class AnimatedSprite(DiscreteSprite):
+    '''Sprite with several frames switching automatically'''
+
     def __init__(self, *args: Any, delay: float = 1, **kwargs: Any):
+        '''
+        Initialization of AnimatedSprite instance
+
+        :param delay: time between to sequential frames to show, in seconds
+        '''
+
         super().__init__(*args, **kwargs)
 
         self.delay = delay
         self.elapsed: float = 0
 
     def step(self, delta_time: float) -> None:
+        '''
+        Update internal state after some time elapsed
+
+        :param delta_time: time elapsed, in seconds
+        '''
+
         self.elapsed += delta_time
         while self.elapsed >= self.delay:
             self.elapsed -= self.delay
@@ -93,11 +153,22 @@ class AnimatedSprite(DiscreteSprite):
 
 
 class ButtonSprite(DiscreteSprite):
+    '''Sprite class for all clickable buttons'''
+
     def __init__(self, *,
                  sheet: Image,
                  xy: tuple[int, int] = (0, 0),
                  handle_escape: bool = False,
                  on_click: Callback = ignore_callback):
+        '''
+        Initialization of ButtonSprite instance
+
+        :param sheet: a surface with table-organized frames
+        :param xy: sprite top-left corner position
+        :param handle_escape: whether to simulate being clicked on pressing escape key event or not
+        :param on_click: callback on being clicked
+        '''
+
         super().__init__(
             sheet=sheet,
             num_cols=2,
@@ -110,6 +181,12 @@ class ButtonSprite(DiscreteSprite):
         self.on_click = on_click
 
     def update(self, event: Event | None = None) -> None:
+        '''
+        Event handler method
+
+        :param event: an event to handle (optional)
+        '''
+
         if event is None:
             return
 
@@ -130,16 +207,26 @@ class ButtonSprite(DiscreteSprite):
 @singleton
 @attr.s(slots=True, kw_only=True)
 class CursorSprite(AnimatedSprite):
+    '''Singleton cursor sprite class'''
+
     sound: Sound = attr.ib(default=None, init=False)
     is_on: bool = attr.ib(default=False, init=False)
 
     def __attrs_post_init__(self):
+        '''Post-initialization'''
+
         from core import ResourceManager
 
         manager = ResourceManager()
         # self.sound = manager.get_sound('click.wav')
 
     def step(self, delta_time: float) -> None:
+        '''
+        Update internal state after some time elapsed
+
+        :param delta_time: time elapsed, in seconds
+        '''
+
         if self.is_on:
             self.elapsed += delta_time
             while self.elapsed >= self.delay:
@@ -149,6 +236,12 @@ class CursorSprite(AnimatedSprite):
                     self.is_on = False
 
     def update(self, event: Event | None = None) -> None:
+        '''
+        Event handler method
+
+        :param event: an event to handle (optional)
+        '''
+
         if event.type is None:
             return
 

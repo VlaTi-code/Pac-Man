@@ -1,3 +1,5 @@
+'''Board class implementation'''
+
 from math import pi
 
 import attr
@@ -12,6 +14,8 @@ from utils import draw_sprite, draw_text, init_from_config
 
 @attr.s(slots=True, kw_only=True)
 class Board:
+    '''Level board class'''
+
     topleft: Vector2 = attr.ib(converter=Vector2)
     cell_size: int = attr.ib()
     level_name: str = attr.ib()
@@ -24,6 +28,12 @@ class Board:
     level_background: pygame.Surface = attr.ib(default=None, init=False)
 
     def _parse_level_map(self, lines: list[str]) -> None:
+        '''
+        Helper function for level map parsing and graph construction
+
+        :param lines: list of strings read from a level map file
+        '''
+
         manager = ResourceManager()
         config = manager.get_config()
 
@@ -85,10 +95,24 @@ class Board:
 
     @staticmethod
     def _has_wall(lines: list[str], x: int, y: int) -> bool:
+        '''
+        Helper function for checking if a wall exists on the given position
+
+        :param lines: list of strings read from a level map file
+        :param x: cell x-coordinate
+        :param y: cell y-coordinate
+        '''
+
         size_x, size_y = len(lines[0]), len(lines)
         return 0 <= x < size_x and 0 <= y < size_y and lines[y][x] == '#'
 
     def _draw_horizontal_line(self, topleft: Vector2) -> None:
+        '''
+        Helper method for drawing a horizontal line over a wall cell
+
+        :param topleft: cell top-left coordinate, relative to the board
+        '''
+
         pygame.draw.line(
             self.level_background,
             'blue',
@@ -98,6 +122,12 @@ class Board:
         )
 
     def _draw_vertical_line(self, topleft: Vector2) -> None:
+        '''
+        Helper method for drawing a vertical line over a wall cell
+
+        :param topleft: cell top-left coordinate, relative to the board
+        '''
+
         pygame.draw.line(
             self.level_background,
             'blue',
@@ -107,6 +137,13 @@ class Board:
         )
 
     def _draw_arc(self, center: Vector2, start_angle: float) -> None:
+        '''
+        Helper method for drawing a 90 degrees anti-clockwise arc line over a wall cell
+
+        :param center: center position for a base ellipse to pick an arc from, relative to the board
+        :param start_angle: arc starting direction, in radians
+        '''
+
         pygame.draw.arc(
             self.level_background,
             'blue',
@@ -117,6 +154,12 @@ class Board:
         )
 
     def _init_level_background(self, lines: list[str]) -> None:
+        '''
+        Helper function for board background initialization
+
+        :param lines: list of strings read from a level map file
+        '''
+
         size_x, size_y = len(lines[0]), len(lines)
         self.level_background = pygame.Surface(self.cell_size * Vector2(size_x, size_y))
         cell_vector = Vector2(self.cell_size)
@@ -178,8 +221,9 @@ class Board:
                 else:
                     pass
 
-
     def __attrs_post_init__(self):
+        '''Post-initialization'''
+
         manager = ResourceManager()
         lines = manager.get_level_map(self.level_name)
 
@@ -192,15 +236,27 @@ class Board:
             player.compute_masks()
 
     def has_won(self) -> bool:
+        '''Check whether pacman has already won or not'''
+
         return not self.total_pellets
 
     def has_lost(self) -> bool:
+        '''Check whether pacman has already lost or not'''
+
         return not self.pacman.lives
 
     def is_game_over(self) -> bool:
+        '''Check whether the game is over or not'''
+
         return self.has_won() or self.has_lost()
 
     def step(self, delta_time: float) -> None:
+        '''
+        Update internal board and players' state after some time elapsed
+
+        :param delta_time: time elapsed, in seconds
+        '''
+
         for player in self.players:
             player.update_target(self.graph, self.pacman.real_pos)
             player.step(delta_time)
@@ -219,6 +275,12 @@ class Board:
                     self.pacman.scale_sprite((self.cell_size, self.cell_size))
 
     def render(self, screen: pygame.Surface) -> None:
+        '''
+        Drawing method
+
+        :param screen: surface to draw the board on
+        '''
+
         screen.blit(self.level_background, self.topleft)
 
         for y, row in enumerate(self.pellets):

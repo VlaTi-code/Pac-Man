@@ -1,3 +1,6 @@
+'''Main script (entry point)'''
+
+
 import pygame
 
 from core import ResourceManager
@@ -5,7 +8,11 @@ from rooms import MainMenu
 from utils import init_from_config
 
 
-def main():
+def main() -> None:
+    '''
+    Main function (entry point)
+    '''
+
     manager = ResourceManager()
     config = manager.get_config()
     room = init_from_config(config, MainMenu)
