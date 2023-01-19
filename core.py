@@ -8,7 +8,7 @@ from typing import Any, Callable
 import attr
 import pygame
 
-from sprites import CursorSprite
+from sprites import ButtonSprite, CursorSprite
 from utils import *  # noqa
 
 
@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 Event = pygame.event.EventType
 Font = pygame.font.Font
+Group = pygame.sprite.Group
 Image = pygame.surface.Surface
 Sound = pygame.mixer.Sound
 Sprite = pygame.sprite.Sprite
@@ -25,6 +26,7 @@ Sprite = pygame.sprite.Sprite
 __all__ = (
     'ResourceManager',
     'BaseRoom',
+    'BaseButton',
 )
 
 
@@ -61,7 +63,8 @@ class ResourceManager:
     def _load_folder(self,
                      folder_name: str | Path,
                      target_dict: dict[str, Any],
-                     loader: Callable) -> None:
+                     loader: Callable[..., Any],
+                     ) -> None:
         '''
         Helper function for autoloading a subfolder of resources/
 
@@ -134,7 +137,7 @@ class ResourceManager:
 
         return self.config
 
-    def __del__(self):
+    def __del__(self) -> None:
         '''
         Destruction of ResourceManager instance
         '''
@@ -155,10 +158,10 @@ class BaseRoom:
         default=attr.Factory(lambda self: self, takes_self=True),
         init=False,
     )
-    sprites = attr.ib(factory=pygame.sprite.Group, init=False)
+    sprites: Group = attr.ib(factory=Group, init=False)
     cursor: CursorSprite = attr.ib(factory=CursorSprite, init=False)
 
-    def __attrs_post_init__(self):
+    def __attrs_post_init__(self) -> None:
         '''
         Post-initialization
         '''
@@ -204,7 +207,7 @@ class BaseRoom:
 
         self.cursor.step(delta_time)
 
-    def render(self, screen: pygame.Surface) -> None:
+    def render(self, screen: Image) -> None:
         '''
         Drawing method
 
@@ -212,3 +215,28 @@ class BaseRoom:
         '''
 
         self.sprites.draw(screen)
+
+
+@attr.s(slots=True, kw_only=True)
+class BaseButton(Sprite):
+    '''Base class for all buttons'''
+
+    sprite: ButtonSprite = attr.ib(default=None, init=False)
+
+    def handle_event(self, event: Event | None = None) -> None:
+        '''
+        Event handler method
+
+        :param event: an event to handle (optional)
+        '''
+
+        self.sprite.handle_event(event)
+
+    def draw(self, screen: Image) -> None:
+        '''
+        Drawing method
+
+        :param screen: a surface to draw the button on
+        '''
+
+        draw_sprite(screen, self.sprite)

@@ -3,10 +3,11 @@
 from enum import IntEnum
 import os
 from pathlib import Path
+from typing import Sequence
 
 import attr
 import pygame
-from pygame import Vector2
+from pygame.math import Vector2
 
 from core import ResourceManager
 from .graph import *  # noqa
@@ -14,7 +15,21 @@ from sprites import AnimatedSprite
 from utils import EPS
 
 
-Image = pygame.Surface
+__all__ = (
+    'Player',
+    'GhostGangAI',
+
+    'Blinky',
+    'Pinky',
+    'Inky',
+    'Clyde',
+
+    'Pacman',
+)
+
+
+Image = pygame.surface.Surface
+KeysType = Sequence[bool]
 
 
 class LookAtDirection(IntEnum):
@@ -39,7 +54,7 @@ class Player(AnimatedSprite):
     sheet: Image = attr.ib(default=None, init=False)
     init_frames: list[Image] = attr.ib(factory=list, init=False)
 
-    def __attrs_post_init__(self):
+    def __attrs_post_init__(self) -> None:
         '''Post-initialization'''
 
         manager = ResourceManager()
@@ -122,7 +137,7 @@ class Player(AnimatedSprite):
 class GhostGangAI(Player):  # TODO: implement AI strategies
     '''Base class for all ghosts'''
 
-    def __attrs_post_init__(self):
+    def __attrs_post_init__(self) -> None:
         '''Post-initialization'''
 
         super().__attrs_post_init__()
@@ -135,9 +150,9 @@ class GhostGangAI(Player):  # TODO: implement AI strategies
         :param pacman_pos: Pacman intermediate position w.r.t. to board, in cells
         '''
 
-        target = Vector(pacman_pos)
+        target = Vertex.from_vector(pacman_pos)
         if self.is_aligned():
-            return bfs(graph, [Vertex.from_vector(self.real_pos)], target)
+            return bfs(graph, sources=[Vertex.from_vector(self.real_pos)], target=target)
 
         direction = self._get_direction()
         norm = direction.length()
@@ -153,7 +168,7 @@ class GhostGangAI(Player):  # TODO: implement AI strategies
 class Blinky(GhostGangAI):
     '''Blinky strategy implementation'''
 
-    def __attrs_post_init__(self):
+    def __attrs_post_init__(self) -> None:
         '''Post-initialization'''
 
         super().__attrs_post_init__()
@@ -173,7 +188,7 @@ class Blinky(GhostGangAI):
 class Pinky(GhostGangAI):
     '''Pinky strategy implementation'''
 
-    def __attrs_post_init__(self):
+    def __attrs_post_init__(self) -> None:
         '''Post-initialization'''
 
         super().__attrs_post_init__()
@@ -193,7 +208,7 @@ class Pinky(GhostGangAI):
 class Inky(GhostGangAI):
     '''Inky strategy implementation'''
 
-    def __attrs_post_init__(self):
+    def __attrs_post_init__(self) -> None:
         '''Post-initialization'''
 
         super().__attrs_post_init__()
@@ -213,7 +228,7 @@ class Inky(GhostGangAI):
 class Clyde(GhostGangAI):
     '''Clyde strategy implementation'''
 
-    def __attrs_post_init__(self):
+    def __attrs_post_init__(self) -> None:
         '''Post-initialization'''
 
         super().__attrs_post_init__()
@@ -234,11 +249,11 @@ class Pacman(Player):
     '''Pacman implementation'''
 
     lives: int = attr.ib()
-
-    score: int = attr.ib(default=0, init=False)
     invincible_time: float = attr.ib(default=0)
 
-    def __attrs_post_init__(self):
+    score: int = attr.ib(default=0, init=False)
+
+    def __attrs_post_init__(self) -> None:
         '''Post-initialization'''
 
         super().__attrs_post_init__()
@@ -253,7 +268,7 @@ class Pacman(Player):
 
         self.lives -= 1
         if not self.lives:
-            self.image.set_alpha(0)
+            self.image.set_alpha(0)  # type: ignore
         self.respawn()
         self.score = 0
 
@@ -273,7 +288,7 @@ class Pacman(Player):
         if self.is_invincible():
             self.invincible_time = max(0, self.invincible_time - delta_time)
 
-    def _init_new_move(self, keys, graph: UndirectedGraph) -> None:
+    def _init_new_move(self, keys: KeysType, graph: UndirectedGraph) -> None:
         '''
         Check if pacman tries to initiate a new move while being aligned and accept it if possible
 
@@ -306,7 +321,7 @@ class Pacman(Player):
         else:
             pass
 
-    def _reverse_last_move(self, keys) -> None:
+    def _reverse_last_move(self, keys: KeysType) -> None:
         '''
         Check if pacman tries to move in the opposite direction and accept it if possible
 

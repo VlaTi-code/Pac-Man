@@ -1,6 +1,5 @@
 '''Main script (entry point)'''
 
-
 import pygame
 
 from core import ResourceManager

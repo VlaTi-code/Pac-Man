@@ -16,7 +16,7 @@ __all__ = (
 )
 
 
-Callback = Callable
+Callback = Callable[..., Any]
 Event = pygame.event.EventType
 Image = pygame.surface.Surface
 Mask = pygame.mask.Mask
@@ -24,8 +24,13 @@ Sound = pygame.mixer.Sound
 Sprite = pygame.sprite.Sprite
 
 
+@attr.s(slots=True, kw_only=True, init=False)
 class DiscreteSprite(Sprite):
     '''Sprites with several frames which are to switched manually'''
+
+    frame_idx: int = attr.ib(default=0, init=False)
+    frames: list[Image] = attr.ib(factory=list, init=False)
+    masks: list[Mask] = attr.ib(factory=list, init=False)
 
     def __init__(self,
                  *args: Any,
@@ -54,16 +59,16 @@ class DiscreteSprite(Sprite):
             self.compute_masks()
 
         self._show_frame(0)
-        self.rect.move_ip(*xy)
+        self.rect.move_ip(*xy)  # type: ignore
 
     def _refresh_image(self) -> None:
         '''
         Helper method for refreshing current frame and mask (if available)
         '''
 
-        self.image = self.frames[self.frame_idx]
+        self.image = self.frames[self.frame_idx]  # type: ignore
         if self.masks:
-            self.mask = self.masks[self.frame_idx]
+            self.mask = self.masks[self.frame_idx]  # type: ignore
 
     def _show_frame(self, idx: int) -> None:
         '''
@@ -91,7 +96,7 @@ class DiscreteSprite(Sprite):
         :param num_rows: # of rows in a table
         '''
 
-        self.rect = pygame.Rect(
+        self.rect = pygame.Rect(  # type: ignore
             0, 0, sheet.get_width() // num_cols, sheet.get_height() // num_rows,
         )
         for row in range(num_rows):
@@ -124,10 +129,15 @@ class DiscreteSprite(Sprite):
         self._refresh_image()
 
 
+@attr.s(slots=True, kw_only=True, init=False)
 class AnimatedSprite(DiscreteSprite):
     '''Sprite with several frames switching automatically'''
 
-    def __init__(self, *args: Any, delay: float = 1, **kwargs: Any):
+    delay: float = attr.ib(default=1)
+
+    elapsed: float = attr.ib(default=0, init=False)
+
+    def __init__(self, *args: Any, delay: float = 1, **kwargs: Any) -> None:
         '''
         Initialization of AnimatedSprite instance
 
@@ -137,7 +147,6 @@ class AnimatedSprite(DiscreteSprite):
         super().__init__(*args, **kwargs)
 
         self.delay = delay
-        self.elapsed: float = 0
 
     def step(self, delta_time: float) -> None:
         '''
@@ -152,8 +161,12 @@ class AnimatedSprite(DiscreteSprite):
             self._switch_frame()
 
 
+@attr.s(slots=True, kw_only=True, init=False)
 class ButtonSprite(DiscreteSprite):
     '''Sprite class for all clickable buttons'''
+
+    handle_escape: bool = attr.ib(default=False)
+    on_click: Callback = attr.ib(default=ignore_callback)
 
     def __init__(self, *,
                  sheet: Image,
@@ -175,12 +188,12 @@ class ButtonSprite(DiscreteSprite):
             num_rows=1,
             xy=xy,
         )
-        self.rect = self.image.get_rect(topleft=xy)
+        self.rect = self.image.get_rect(topleft=xy)  # type: ignore
 
         self.handle_escape = handle_escape
         self.on_click = on_click
 
-    def update(self, event: Event | None = None) -> None:
+    def handle_event(self, event: Event | None = None) -> None:
         '''
         Event handler method
 
@@ -212,7 +225,7 @@ class CursorSprite(AnimatedSprite):
     sound: Sound = attr.ib(default=None, init=False)
     is_on: bool = attr.ib(default=False, init=False)
 
-    def __attrs_post_init__(self):
+    def __attrs_post_init__(self) -> None:
         '''Post-initialization'''
 
         from core import ResourceManager
@@ -235,7 +248,7 @@ class CursorSprite(AnimatedSprite):
                 if not self.frame_idx:
                     self.is_on = False
 
-    def update(self, event: Event | None = None) -> None:
+    def handle_event(self, event: Event | None = None) -> None:
         '''
         Event handler method
 
@@ -247,7 +260,7 @@ class CursorSprite(AnimatedSprite):
 
         match event.type:
             case pygame.MOUSEMOTION:
-                self.rect = self.image.get_rect(topleft=event.pos)
+                self.rect = self.image.get_rect(topleft=event.pos)  # type: ignore
             case pygame.MOUSEBUTTONUP:
                 if event.button == LEFT_MB:
                     # self.sound.stop()

@@ -4,12 +4,20 @@ from math import pi
 
 import attr
 import pygame
-from pygame import Vector2
+from pygame.math import Vector2
 
 from core import ResourceManager
 from .graph import *   # noqa
 from .player import *  # noqa
 from utils import draw_sprite, draw_text, init_from_config
+
+
+__all__ = (
+    'Board',
+)
+
+
+Image = pygame.surface.Surface
 
 
 @attr.s(slots=True, kw_only=True)
@@ -25,7 +33,7 @@ class Board:
     total_pellets: int = attr.ib(default=0, init=False)
     players: list[Player] = attr.ib(factory=list, init=False)
     pacman: Pacman = attr.ib(default=None, init=False)
-    level_background: pygame.Surface = attr.ib(default=None, init=False)
+    level_background: Image = attr.ib(default=None, init=False)
 
     def _parse_level_map(self, lines: list[str]) -> None:
         '''
@@ -161,7 +169,7 @@ class Board:
         '''
 
         size_x, size_y = len(lines[0]), len(lines)
-        self.level_background = pygame.Surface(self.cell_size * Vector2(size_x, size_y))
+        self.level_background = Image(self.cell_size * Vector2(size_x, size_y))
         cell_vector = Vector2(self.cell_size)
 
         # Chessboard-like coloring
@@ -221,7 +229,7 @@ class Board:
                 else:
                     pass
 
-    def __attrs_post_init__(self):
+    def __attrs_post_init__(self) -> None:
         '''Post-initialization'''
 
         manager = ResourceManager()
@@ -262,7 +270,7 @@ class Board:
             player.step(delta_time)
 
         if self.pacman.is_aligned():
-            x, y = map(round, self.pacman.real_pos)
+            x, y = map(round, self.pacman.real_pos)  # type: ignore
             if self.pellets[y][x]:
                 self.pellets[y][x] = False
                 self.total_pellets -= 1
@@ -274,7 +282,7 @@ class Board:
                     self.pacman.get_caught()
                     self.pacman.scale_sprite((self.cell_size, self.cell_size))
 
-    def render(self, screen: pygame.Surface) -> None:
+    def render(self, screen: Image) -> None:
         '''
         Drawing method
 
@@ -290,7 +298,7 @@ class Board:
                     pygame.draw.circle(screen, 'yellow', pos, radius=4)
 
         for player in self.players:
-            player.rect.topleft = self.topleft + self.cell_size * player.real_pos
+            player.rect.topleft = self.topleft + self.cell_size * player.real_pos  # type: ignore
             draw_sprite(screen, player)
 
         if self.pacman.is_invincible():
@@ -313,5 +321,5 @@ class Board:
 
         life_sprite = manager.get_sprite('life.png')
         for idx in range(self.pacman.lives):
-            life_sprite.rect.topleft = (350 + 60 * idx, height - 65)
+            life_sprite.rect.topleft = (350 + 60 * idx, height - 65)  # type: ignore
             draw_sprite(screen, life_sprite)

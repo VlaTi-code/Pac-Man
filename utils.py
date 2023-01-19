@@ -39,6 +39,7 @@ __all__ = (
 
 
 Color = tuple[int, int, int]
+ConfigType = dict[str, Any]
 Font = pygame.font.Font
 Image = pygame.surface.Surface
 Sound = pygame.mixer.Sound
@@ -50,7 +51,7 @@ LEFT_MB = 1
 EPS = 1e-2
 
 
-def parse_config(path: str | Path) -> Any:
+def parse_config(path: str | Path) -> ConfigType:
     '''
     Safely parse a YAML config
 
@@ -61,7 +62,7 @@ def parse_config(path: str | Path) -> Any:
         return yaml.safe_load(file)
 
 
-def init_from_config(config, cls: type, **kwargs: Any) -> Any:
+def init_from_config(config: ConfigType, cls: type, **kwargs: Any) -> Any:
     '''
     Instantiate a class using config data
 
@@ -83,11 +84,11 @@ def singleton(cls: type) -> type:
 
     instances: dict[type, Any] = {}
 
-    def wrapper(*args: Any, **kwargs: Any):
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
         if cls not in instances:
             instances[cls] = cls(*args, **kwargs)
         return instances[cls]
-    return wrapper
+    return wrapper  # type: ignore
 
 
 def get_random(from_: float, to: float) -> float:
@@ -117,7 +118,7 @@ def draw_text(screen: Image,
               color: Color | str,
               pos: tuple[int, int],
               *,
-              centered=True,
+              centered: bool = True,
               ) -> None:
     '''
     Render a text on a screen
@@ -131,7 +132,7 @@ def draw_text(screen: Image,
     '''
 
     eff_color = pygame.Color(color) if isinstance(color, str) else color
-    rendered = font.render(text, True, eff_color)
+    rendered = font.render(text, True, eff_color)  # type: ignore
     x, y = pos
     if centered:
         width, height = rendered.get_rect().size
@@ -140,7 +141,7 @@ def draw_text(screen: Image,
     screen.blit(rendered, (x, y))
 
 
-def draw_sprite(screen: pygame.Surface, sprite: Sprite) -> None:
+def draw_sprite(screen: Image, sprite: Sprite) -> None:
     '''
     Render a single sprite on a screen
 
@@ -148,7 +149,7 @@ def draw_sprite(screen: pygame.Surface, sprite: Sprite) -> None:
     :param sprite: sprite to render
     '''
 
-    screen.blit(sprite.image, sprite.rect)
+    screen.blit(sprite.image, sprite.rect)  # type: ignore
 
 
 def load_sound(path: str | Path) -> Sound:

@@ -4,6 +4,16 @@ from collections import defaultdict, deque
 
 import attr
 import pygame
+from pygame.math import Vector2
+
+
+__all__ = (
+    'Vertex',
+    'UndirectedGraph',
+    'BFSData',
+
+    'bfs',
+)
 
 
 @attr.s(slots=True, hash=True, eq=True)
@@ -14,7 +24,7 @@ class Vertex:
     y: int = attr.ib(converter=round)
 
     @staticmethod
-    def from_vector(vector: pygame.Vector2) -> 'Vertex':
+    def from_vector(vector: Vector2) -> 'Vertex':
         '''
         Construct a vertex from a 2D-vector. Rounds coordinates to integers
 
@@ -23,19 +33,19 @@ class Vertex:
 
         return Vertex(vector.x, vector.y)
 
-    def to_vector(self) -> pygame.Vector2:
+    def to_vector(self) -> Vector2:
         '''Convert into a 2D-vector'''
 
-        return pygame.Vector2(self.x, self.y)
+        return Vector2(self.x, self.y)
 
-    def __add__(self, other: pygame.Vector2) -> 'Vertex':
+    def __add__(self, other: Vector2) -> 'Vertex':
         '''
         Addition operator for vertices and 2D-vectors
 
         :param other: right-hand side addend
         '''
 
-        assert isinstance(other, pygame.Vector2), 'You are a donkey!'
+        assert isinstance(other, Vector2), 'You are a donkey!'
         return Vertex(self.x + other.x, self.y + other.y)
 
 
@@ -107,7 +117,7 @@ def bfs(graph: UndirectedGraph,
         *,
         sources: list[Vertex],
         target: Vertex,
-        src_dists: list[float] = None) -> BFSData:
+        src_dists: list[float] | None = None) -> BFSData:
     '''
     Multi-source BFS runner
 

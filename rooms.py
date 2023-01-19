@@ -10,14 +10,27 @@ from logic import *  # noqa
 from utils import draw_text, init_from_config
 
 
-Event = pygame.event.EventType
+__all__ = (
+    'BaseMenu',
+    'LevelRoom',
+
+    'MainMenu',
+    'LevelMenu',
+    'SettingsMenu',
+    'SkinsMenu',
+    'AboutMenu',
+)
+
+
+Event = pygame.event.EventType  # type: ignore
+Image = pygame.surface.Surface
 
 
 @attr.s(slots=True, kw_only=True)
 class BaseMenu(BaseRoom):
     '''Base class for all rooms with buttons'''
 
-    buttons = attr.ib(factory=list)
+    buttons: list['BaseButton'] = attr.ib(factory=list)
 
     def handle_event(self, event: Event | None = None) -> None:
         '''
@@ -28,9 +41,9 @@ class BaseMenu(BaseRoom):
 
         super().handle_event(event)
         for button in self.buttons:
-            button.update(event)
+            button.handle_event(event)
 
-    def render(self, screen: pygame.Surface) -> None:
+    def render(self, screen: Image) -> None:
         '''
         Drawing method
 
@@ -46,7 +59,7 @@ class BaseMenu(BaseRoom):
 class MainMenu(BaseMenu):
     '''Main menu'''
 
-    def __attrs_post_init__(self):
+    def __attrs_post_init__(self) -> None:
         '''Post-initialization'''
 
         import buttons
@@ -67,7 +80,7 @@ class MainMenu(BaseMenu):
 class LevelMenu(BaseMenu):
     '''Menu for choosing a level'''
 
-    def __attrs_post_init__(self):
+    def __attrs_post_init__(self) -> None:
         '''Post-initialization'''
 
         import buttons
@@ -89,7 +102,7 @@ class LevelMenu(BaseMenu):
 class SettingsMenu(BaseMenu):
     '''Settings menu'''
 
-    def __attrs_post_init__(self):
+    def __attrs_post_init__(self) -> None:
         '''Post-initialization'''
 
         import buttons
@@ -106,7 +119,7 @@ class SettingsMenu(BaseMenu):
 class SkinsMenu(BaseMenu):
     '''Menu for choosing skins'''
 
-    def __attrs_post_init__(self):
+    def __attrs_post_init__(self) -> None:
         '''Post-initialization'''
 
         import buttons
@@ -123,7 +136,7 @@ class SkinsMenu(BaseMenu):
 class AboutMenu(BaseMenu):
     '''About section'''
 
-    def __attrs_post_init__(self):
+    def __attrs_post_init__(self) -> None:
         '''Post-initialization'''
 
         import buttons
@@ -140,12 +153,12 @@ class AboutMenu(BaseMenu):
 class LevelRoom(BaseMenu):
     '''Base class for all level rooms'''
 
-    level_name: str | Path = None
+    level_name: str | Path = None  # type: ignore
 
     board: Board = attr.ib(default=None, init=False)
     is_paused: bool = attr.ib(default=False, init=False)
 
-    def __attrs_post_init__(self):
+    def __attrs_post_init__(self) -> None:
         '''Post-initialization'''
 
         import buttons
@@ -167,6 +180,10 @@ class LevelRoom(BaseMenu):
         '''
 
         super().handle_event(event)
+
+        if event is None:
+            return
+
         if event.type == pygame.KEYDOWN:
             if self.is_paused:
                 self.is_paused = False
@@ -175,7 +192,7 @@ class LevelRoom(BaseMenu):
             else:
                 pass
 
-    def render(self, screen: pygame.Surface) -> None:
+    def render(self, screen: Image) -> None:
         '''
         Drawing method
 

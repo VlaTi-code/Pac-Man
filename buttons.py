@@ -11,33 +11,22 @@ from sprites import ButtonSprite
 from utils import draw_text, draw_sprite, init_from_config
 
 
-Event = pygame.event.EventType
+Event = pygame.event.EventType  # type: ignore
+Image = pygame.surface.Surface
+Rect = pygame.rect.Rect
 Sprite = pygame.sprite.Sprite
 
 
-@attr.s(slots=True, kw_only=True)
-class BaseButton(Sprite):
-    '''Base class for all buttons'''
+__all__ = (
+    'PlayButton',
+    'SettingsButton',
+    'SkinsButton',
+    'AboutButton',
+    'QuitButton',
+    'BackButton',
 
-    sprite: ButtonSprite = attr.ib(default=None, init=False)
-
-    def update(self, event: Event | None = None) -> None:
-        '''
-        Event handler method
-
-        :param event: an event to handle (optional)
-        '''
-
-        self.sprite.update(event)
-
-    def draw(self, screen: pygame.Surface) -> None:
-        '''
-        Drawing method
-
-        :param screen: a surface to draw the button on
-        '''
-
-        draw_sprite(screen, self.sprite)
+    'LevelButton',
+)
 
 
 @attr.s(slots=True, kw_only=True)
@@ -49,7 +38,7 @@ class TransitionButton(BaseButton):
     xy: tuple[int, int] = attr.ib()
     handle_escape: bool = attr.ib(default=False)
 
-    next_room_type: type = None
+    next_room_type: type = None  # type: ignore
 
     def _on_click(self) -> None:
         '''
@@ -61,7 +50,7 @@ class TransitionButton(BaseButton):
         next_room = init_from_config(config, self.next_room_type)
         self.room.set_next_room(next_room)
 
-    def __attrs_post_init__(self):
+    def __attrs_post_init__(self) -> None:
         '''
         Post-initialization
         '''
@@ -122,9 +111,9 @@ class BackButton(TransitionButton):
 class LevelButton(TransitionButton):
     '''Base class for all level choosing buttons'''
 
-    level_idx: int = None
+    level_idx: int = None  # type: ignore
 
-    def draw(self, screen: pygame.Surface) -> None:
+    def draw(self, screen: Image) -> None:
         '''
         Drawing method
 
@@ -137,6 +126,6 @@ class LevelButton(TransitionButton):
         font = manager.get_font('Chessmaster X', 36)
 
         pos = pygame.mouse.get_pos()
-        rect = self.sprite.rect
+        rect: Rect = self.sprite.rect  # type: ignore
         color = 'white' if rect.collidepoint(pos) else 'gray'
         draw_text(screen, font, str(self.level_idx), color, rect.center)
