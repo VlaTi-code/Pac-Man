@@ -86,53 +86,60 @@ class ResourceManager:
 
     def get_font(self, font_name: str, size: int) -> Font:
         '''
-        Returns a font object
+        Request for a font object
 
         :param font_name: fontname
         :param size: fontsize in points
+        :return: font object
         '''
 
         return pygame.font.SysFont(font_name, size)
 
     def get_image(self, image_name: str) -> Image:
         '''
-        Returns an image (pygame.Surface)
+        Request for an image (pygame.Surface)
 
         :param image_name: path to an image, relative to resources/images/ folder
+        :return: image (pygame Surface instance)
         '''
 
         return self.images[image_name]
 
     def get_sound(self, sound_name: str) -> Sound:
         '''
-        Returns a sound object
+        Request for a sound object
 
         :param sound_name: path to a sound, relative to resources/sounds/ folder
+        :return: pygame.Sound instance
         '''
 
         return self.sounds[sound_name]
 
     def get_sprite(self, sprite_name: str) -> Sprite:
         '''
-        Returns a sprite object
+        Request for a sprite object
 
         :param sprite_name: path to a sprite image, relative to resources/sprites/ folder
+        :return: pygame Sprite instance
         '''
 
         return self.sprites[sprite_name]
 
     def get_level_map(self, level_name: str) -> list[str]:
         '''
-        Returns a level text map
+        Request for a level text map
 
         :param level_name: path to a map file, relative to resources/levels/ folder
+        :return: list of strings (level map rows)
         '''
 
         return self.levels[level_name]
 
     def get_config(self) -> dict[str, Any]:
         '''
-        Returns parsed YAML configuration object
+        Request for a parsed YAML configuration object
+
+        :return: config object
         '''
 
         return self.config
@@ -191,7 +198,7 @@ class BaseRoom:
 
     def get_next_room(self) -> 'BaseRoom':
         '''
-        Returns the next room to show
+        Get the next room to show
 
         :returns: room object
         '''

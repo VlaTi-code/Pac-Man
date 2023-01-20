@@ -37,6 +37,7 @@ def round_vector(vector: Vector2) -> Vector2:
     Round vector components
 
     :param vector: 2D-vector to round
+    :return: new 2D-vector after rounding
     '''
 
     return Vertex.from_vector(vector).to_vector()
@@ -47,6 +48,7 @@ def is_zero(vector: Vector2) -> bool:
     Check whether a vector is zero
 
     :param vector: 2D-vector to check
+    :return: True if vector is zero
     '''
 
     return vector.x == vector.y == 0
@@ -57,6 +59,7 @@ def is_almost_zero(vector: Vector2) -> bool:
     Check whether a vector is close to zero
 
     :param vector: 2D-vector to check
+    :return: True if vector is close to zero
     '''
 
     return vector.length_squared() < EPS
@@ -122,7 +125,10 @@ class Player(AnimatedSprite):
         self.compute_masks()
 
     def is_aligned(self) -> bool:
-        '''Check whether a player is at the center of a target cell'''
+        '''
+        Check whether the player is at the center of a target cell
+
+        :return: True if player has reached its destination'''
 
         return is_zero(self.direction)
 
@@ -150,12 +156,11 @@ class Player(AnimatedSprite):
         else:
             assert False, 'Smth went numerically unstable, sorry'
 
-    def update_target(self, graph: UndirectedGraph, pacman_pos: Vector2) -> None:
+    def update_target(self, board: 'Board') -> None:
         '''
         Update player target position given the board graph and current Pacman position
 
-        :param graph: board graph
-        :param pacman_pos: Pacman intermediate position w.r.t. board, in cells
+        :param board: 'Board' instance
         '''
 
         raise NotImplementedError()
@@ -185,6 +190,8 @@ class GhostState(Enum):
 @attr.s(slots=True, kw_only=True)
 class GhostGangAI(Player):
     '''Base class for all ghosts'''
+
+    scatter_pos: Vector2 = attr.ib()
 
     state: GhostState = attr.ib(default=GhostState.SCATTER, init=False)
     state_timer: float = attr.ib(default=0, init=False)
@@ -246,6 +253,7 @@ class GhostGangAI(Player):
 
         :param graph: board graph
         :param target_pos: target intermediate position w.r.t. board, in cells
+        :return: BFSData instance
         '''
 
         target = Vertex.from_vector(target_pos)
@@ -295,20 +303,27 @@ class Blinky(GhostGangAI):
 
         super().__attrs_post_init__()
 
-    def update_target(self, graph: UndirectedGraph, pacman: 'Pacman') -> None:
+    def update_target(self, board: 'Board') -> None:
         '''
         Update player target position given the board graph and current Pacman position
 
-        :param graph: board graph
-        :param pacman: Pacman instance
+        :param board: 'Board' instance
         '''
 
-        directions = self._get_possible_directions(graph)
+        directions = self._get_possible_directions(board.get_graph())
         if not directions:
             self._update_direction()
             return
 
-        self._pick_closest_to_target(directions, pacman.real_pos)
+        match self.state:
+            case GhostState.SCATTER:
+                target = self.scatter_pos
+            case GhostState.CHASE:
+                target = board.get_player_pos(Pacman)
+            case _:
+                pass
+
+        self._pick_closest_to_target(directions, target)
 
 
 @attr.s(slots=True, kw_only=True)
@@ -320,22 +335,31 @@ class Pinky(GhostGangAI):
 
         super().__attrs_post_init__()
 
-    def update_target(self, graph: UndirectedGraph, pacman: 'Pacman') -> None:
+    def update_target(self, board: 'Board') -> None:
         '''
         Update player target position given the board graph and current Pacman position
 
-        :param graph: board graph
-        :param pacman: Pacman instance
+        :param board: 'Board' instance
         '''
 
-        directions = self._get_possible_directions(graph)
+        directions = self._get_possible_directions(board.get_graph())
         if not directions:
             self._update_direction()
             return
 
-        target = pacman.real_pos + 4 * pacman.direction
-        if pacman.direction == Vector2(0, -1):  # original 16-bit overflow bug for moving up
-            target += Vector2(-4, 0)
+        match self.state:
+            case GhostState.SCATTER:
+                target = self.scatter_pos
+            case GhostState.CHASE:
+                pacman_pos = board.get_player_pos(Pacman)
+                pacman_dir = board.get_player_dir(Pacman)
+                target = pacman_pos + 4 * pacman_dir
+                if pacman_dir == Vector2(0, -1):
+                    # original 16-bit overflow bug for moving up
+                    target += Vector2(-4, 0)
+            case _:
+                pass
+
         self._pick_closest_to_target(directions, target)
 
 
@@ -348,13 +372,29 @@ class Inky(GhostGangAI):
 
         super().__attrs_post_init__()
 
-    def update_target(self, graph: UndirectedGraph, pacman: 'Pacman') -> None:
+    def update_target(self, board: 'Board') -> None:
         '''
         Update player target position given the board graph and current Pacman position
 
-        :param graph: board graph
-        :param pacman: Pacman instance
+        :param board: 'Board' instance
         '''
+
+        directions = self._get_possible_directions(board.get_graph())
+        if not directions:
+            self._update_direction()
+            return
+
+        match self.state:
+            case GhostState.SCATTER:
+                target = self.scatter_pos
+            case GhostState.CHASE:
+                pacman_pos = board.get_player_pos(Pacman)
+                blinky_pos = board.get_player_pos(Blinky)
+                target = 2 * pacman_pos - blinky_pos
+            case _:
+                pass
+
+        self._pick_closest_to_target(directions, target)
 
 
 @attr.s(slots=True, kw_only=True)
@@ -366,13 +406,30 @@ class Clyde(GhostGangAI):
 
         super().__attrs_post_init__()
 
-    def update_target(self, graph: UndirectedGraph, pacman: 'Pacman') -> None:
+    def update_target(self, board: 'Board') -> None:
         '''
         Update player target position given the board graph and current Pacman position
 
-        :param graph: board graph
-        :param pacman: Pacman instance
+        :param board: 'Board' instance
         '''
+
+        directions = self._get_possible_directions(board.get_graph())
+        if not directions:
+            self._update_direction()
+            return
+
+        match self.state:
+            case GhostState.SCATTER:
+                target = self.scatter_pos
+            case GhostState.CHASE:
+                pacman_pos = board.get_player_pos(Pacman)
+                target = pacman_pos
+                if (self.real_pos - pacman_pos).length() < 8:
+                    target = self.scatter_pos
+            case _:
+                pass
+
+        self._pick_closest_to_target(directions, target)
 
 
 @attr.s(slots=True, kw_only=True)
@@ -390,7 +447,11 @@ class Pacman(Player):
         super().__attrs_post_init__()
 
     def is_invincible(self) -> bool:
-        '''Check whether Pacman is currently invincible for ghosts or not'''
+        '''
+        Check whether Pacman is currently invincible for ghosts or not
+
+        :return: True if Pacman is invincible
+        '''
 
         return self.invincible_time > 0
 
@@ -478,17 +539,16 @@ class Pacman(Player):
         else:
             pass
 
-    def update_target(self, graph: UndirectedGraph, pacman: 'Pacman') -> None:
+    def update_target(self, board: 'Board') -> None:
         '''
         Update player target position given the board graph and current Pacman position
 
-        :param graph: board graph
-        :param pacman: Pacman instance
+        :param board: 'Board' instance
         '''
 
         keys = pygame.key.get_pressed()
         if self.is_aligned():
-            self._init_new_move(keys, graph)
+            self._init_new_move(keys, board.get_graph())
         else:
             self._reverse_last_move(keys)
 

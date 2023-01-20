@@ -56,6 +56,7 @@ def parse_config(path: str | Path) -> ConfigType:
     Safely parse a YAML config
 
     :param path: path to a configuration file
+    :return: config object
     '''
 
     with open(path) as file:
@@ -68,6 +69,7 @@ def init_from_config(config: ConfigType, cls: type, **kwargs: Any) -> Any:
 
     :param config: a config object
     :param cls: a class to be instantiated
+    :return: newly configured instance
     '''
 
     return cls(**config.get(cls.__name__, {}), **kwargs)
@@ -97,6 +99,7 @@ def get_random(from_: float, to: float) -> float:
 
     :param from_: lower interval bound
     :param to: upper interval bound
+    :return: random float number
     '''
 
     return from_ + (to - from_) * random.random()
@@ -107,6 +110,7 @@ def roll_dice(prob: float) -> bool:
     Draw a Bernoulli distributed r.v.
 
     :param prob: parameter p of Be(p) distribution
+    :return: True with probability prob
     '''
 
     return random.random() < prob
@@ -157,6 +161,7 @@ def load_sound(path: str | Path) -> Sound:
     Sound loader function
 
     :param path: path to a source file to load
+    :return: pygame Sound instance
     '''
 
     if not os.path.isfile(path):
@@ -173,6 +178,7 @@ def load_image(path: str | Path,
 
     :param path: path to a source file to load
     :param colorkey: key of a color to cut off as a background (color or TOP_LEFT_CORNER const, optional)
+    :return: pygame Surface instance
     '''
 
     if not os.path.isfile(path):
@@ -201,6 +207,7 @@ def load_sprite(path: str | Path,
     :param path: path to a source file to load
     :param colorkey: key of a color to cut off as a background (color or TOP_LEFT_CORNER const, optional)
     :param xy: sprite top-left corner position
+    :return: pygame Sprite instance
     '''
 
     sprite = Sprite()
@@ -214,6 +221,7 @@ def load_font(path: str | Path) -> Font:
     Font loader function
 
     :param path: path to a source file to load
+    :return: pygame Font instance
     '''
 
     raise NotImplementedError()
@@ -224,6 +232,7 @@ def load_level(path: str | Path) -> list[str]:
     Level map loader function
 
     :param path: path to a source file to load
+    :return: list of lines (level map rows)
     '''
 
     with open(path, 'r', encoding='utf-8') as file:

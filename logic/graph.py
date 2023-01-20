@@ -28,12 +28,17 @@ class Vertex:
         Construct a vertex from a 2D-vector. Rounds coordinates to integers
 
         :param vector: vector to initialize a vertex
+        :return: new Vertex instance
         '''
 
         return Vertex(vector.x, vector.y)
 
     def to_vector(self) -> Vector2:
-        '''Convert into a 2D-vector'''
+        '''
+        Convert into a 2D-vector
+
+        :return: new Vector2 instance
+        '''
 
         return Vector2(self.x, self.y)
 
@@ -42,6 +47,7 @@ class Vertex:
         Addition operator for vertices and 2D-vectors
 
         :param other: right-hand side addend
+        :return: new Vertex instance, sum of addends
         '''
 
         assert isinstance(other, Vector2), 'You are a donkey!'
@@ -56,7 +62,11 @@ class UndirectedGraph:
 
     @property
     def size(self) -> int:
-        '''Number of vertices, not taking into account isolated ones'''
+        '''
+        Get number of vertices, not taking into account isolated ones
+
+        :return: # of vertices
+        '''
 
         return len(self.edges)
 
@@ -77,6 +87,7 @@ class UndirectedGraph:
         Adjacent vertices lookup method
 
         :param vertex: vertex to lookup neighbours for
+        :return: set of neighbours
         '''
 
         return self.edges.get(vertex, set())
@@ -94,6 +105,7 @@ class BFSData:
         Helper function to check whether a vertex has been visited before by BFS
 
         :param vertex: vertex to check
+        :return: True if vertex has been bisited
         '''
 
         return vertex in self.dist
@@ -124,6 +136,7 @@ def bfs(graph: UndirectedGraph,
     :param sources: list of BFS sources
     :param target: vertex to search for, stop on reaching it
     :param src_dists: list of initial distance values for sources, defaults to zeroes
+    :return: BFSData instance
     '''
 
     if src_dists is None:

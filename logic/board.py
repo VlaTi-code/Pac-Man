@@ -78,19 +78,19 @@ class Board:
                         self.players.append(self.pacman)
                     case 'B':
                         self.players.append(
-                            init_from_config(config, Blinky, spawn_pos=vector),
+                            init_from_config(config, Blinky, spawn_pos=vector, scatter_pos=Vector2(size_x, -1)),
                         )
                     case 'P':
                         self.players.append(
-                            init_from_config(config, Pinky, spawn_pos=vector),
+                            init_from_config(config, Pinky, spawn_pos=vector, scatter_pos=Vector2(-1, -1)),
                         )
                     case 'I':
                         self.players.append(
-                            init_from_config(config, Inky, spawn_pos=vector),
+                            init_from_config(config, Inky, spawn_pos=vector, scatter_pos=Vector2(size_x, size_y)),
                         )
                     case 'C':
                         self.players.append(
-                            init_from_config(config, Clyde, spawn_pos=vector),
+                            init_from_config(config, Clyde, spawn_pos=vector, scatter_pos=Vector2(-1, size_y)),
                         )
                     case '#' | ' ':
                         pass
@@ -109,6 +109,7 @@ class Board:
         :param lines: list of strings read from a level map file
         :param x: cell x-coordinate
         :param y: cell y-coordinate
+        :return: True if a wall exists on the given position
         '''
 
         size_x, size_y = len(lines[0]), len(lines)
@@ -243,18 +244,77 @@ class Board:
             player.store_init_frames()
             player.compute_masks()
 
+    def get_graph(self) -> UndirectedGraph:
+        '''
+        Get board graph instance
+
+        :return: board graph
+        '''
+
+        return self.graph
+
+    def _get_player(self, cls: type) -> Player | None:
+        '''
+        Find player of given type
+
+        :param cls: type of player
+        :return: Player instance
+        '''
+
+        for player in self.players:
+            if isinstance(player, cls):
+                return player
+
+    def get_player_pos(self, cls: type) -> Vector2:
+        '''
+        Get current position of player of given type
+
+        :param cls: type of player
+        :return: player position
+        '''
+
+        player = self._get_player(cls)
+        if player is None:
+            raise TypeError(f'Unknown Player subtype: {cls.__name__}')
+        return player.real_pos
+
+    def get_player_dir(self, cls: type) -> Vector2:
+        '''
+        Get current direction of player of given type
+
+        :param cls: type of player
+        :return: player direction
+        '''
+
+        player = self._get_player(cls)
+        if player is None:
+            raise TypeError(f'Unknown Player subtype: {cls.__name__}')
+        return player.direction
+
     def has_won(self) -> bool:
-        '''Check whether pacman has already won or not'''
+        '''
+        Check whether pacman has already won or not
+
+        :return: True if pacman has won
+        '''
 
         return not self.total_pellets
 
     def has_lost(self) -> bool:
-        '''Check whether pacman has already lost or not'''
+        '''
+        Check whether pacman has already lost or not
+
+        :return: True if pacman has lost
+        '''
 
         return not self.pacman.lives
 
     def is_game_over(self) -> bool:
-        '''Check whether the game is over or not'''
+        '''
+        Check whether the game is over or not
+
+        :return: True if the game is over
+        '''
 
         return self.has_won() or self.has_lost()
 
@@ -266,7 +326,7 @@ class Board:
         '''
 
         for player in self.players:
-            player.update_target(self.graph, self.pacman)
+            player.update_target(self)
             player.step(delta_time)
 
         if self.pacman.is_aligned():
