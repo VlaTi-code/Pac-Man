@@ -266,7 +266,7 @@ class Board:
         '''
 
         for player in self.players:
-            player.update_target(self.graph, self.pacman.real_pos)
+            player.update_target(self.graph, self.pacman)
             player.step(delta_time)
 
         if self.pacman.is_aligned():

@@ -205,7 +205,14 @@ class GhostGangAI(Player):
         if not is_zero(self.direction):
             self.last_direction = self.direction
 
-    def _get_possible_directions(self, graph: UndirectedGraph) -> list[Vertex]:
+    def _get_possible_directions(self, graph: UndirectedGraph) -> list[Vector2]:
+        '''
+        Get list of possible directions for a new move
+
+        :param graph: board graph
+        :return: list of direction vectors
+        '''
+
         if not self.is_aligned():
             return []
 
@@ -219,15 +226,29 @@ class GhostGangAI(Player):
         ))
         return directions
 
-    def _get_bfs_data(self, graph: UndirectedGraph, pacman_pos: Vector2) -> BFSData:
+    def _pick_closest_to_target(self, directions: list[Vector2], target: Vector2) -> None:
+        '''
+        Subroutine for picking a direction to the closest cell w.r.t. given target cell in-place
+
+        :param directions: list of direction vectors
+        :param target: vector with target cell coordinates
+        '''
+
+        self.direction = min(
+            directions,
+            key=lambda vec: (self.real_pos + vec - target).length_squared(),
+        )
+        self.target_pos = self.real_pos + self.direction
+
+    def _get_bfs_data(self, graph: UndirectedGraph, target_pos: Vector2) -> BFSData:
         '''
         Run BFS on the board graph and return BFS output data
 
         :param graph: board graph
-        :param pacman_pos: Pacman intermediate position w.r.t. board, in cells
+        :param target_pos: target intermediate position w.r.t. board, in cells
         '''
 
-        target = Vertex.from_vector(pacman_pos)
+        target = Vertex.from_vector(target_pos)
         if self.is_aligned():
             return bfs(graph, sources=[Vertex.from_vector(self.real_pos)], target=target)
 
@@ -274,12 +295,12 @@ class Blinky(GhostGangAI):
 
         super().__attrs_post_init__()
 
-    def update_target(self, graph: UndirectedGraph, pacman_pos: Vector2) -> None:
+    def update_target(self, graph: UndirectedGraph, pacman: 'Pacman') -> None:
         '''
         Update player target position given the board graph and current Pacman position
 
         :param graph: board graph
-        :param pacman_pos: Pacman intermediate position w.r.t. board, in cells
+        :param pacman: Pacman instance
         '''
 
         directions = self._get_possible_directions(graph)
@@ -287,11 +308,7 @@ class Blinky(GhostGangAI):
             self._update_direction()
             return
 
-        self.direction = min(
-            directions,
-            key=lambda vec: (self.real_pos + vec - pacman_pos).length_squared(),
-        )
-        self.target_pos = self.real_pos + self.direction
+        self._pick_closest_to_target(directions, pacman.real_pos)
 
 
 @attr.s(slots=True, kw_only=True)
@@ -303,17 +320,23 @@ class Pinky(GhostGangAI):
 
         super().__attrs_post_init__()
 
-    def update_target(self, graph: UndirectedGraph, pacman_pos: Vector2) -> None:
+    def update_target(self, graph: UndirectedGraph, pacman: 'Pacman') -> None:
         '''
         Update player target position given the board graph and current Pacman position
 
         :param graph: board graph
-        :param pacman_pos: Pacman intermediate position w.r.t. board, in cells
+        :param pacman: Pacman instance
         '''
 
-        data = self._get_bfs_data(graph, pacman_pos)
-        ...
-        self._update_direction()
+        directions = self._get_possible_directions(graph)
+        if not directions:
+            self._update_direction()
+            return
+
+        target = pacman.real_pos + 4 * pacman.direction
+        if pacman.direction == Vector2(0, -1):  # original 16-bit overflow bug for moving up
+            target += Vector2(-4, 0)
+        self._pick_closest_to_target(directions, target)
 
 
 @attr.s(slots=True, kw_only=True)
@@ -325,17 +348,13 @@ class Inky(GhostGangAI):
 
         super().__attrs_post_init__()
 
-    def update_target(self, graph: UndirectedGraph, pacman_pos: Vector2) -> None:
+    def update_target(self, graph: UndirectedGraph, pacman: 'Pacman') -> None:
         '''
         Update player target position given the board graph and current Pacman position
 
         :param graph: board graph
-        :param pacman_pos: Pacman intermediate position w.r.t. board, in cells
+        :param pacman: Pacman instance
         '''
-
-        data = self._get_bfs_data(graph, pacman_pos)
-        ...
-        self._update_direction()
 
 
 @attr.s(slots=True, kw_only=True)
@@ -347,17 +366,13 @@ class Clyde(GhostGangAI):
 
         super().__attrs_post_init__()
 
-    def update_target(self, graph: UndirectedGraph, pacman_pos: Vector2) -> None:
+    def update_target(self, graph: UndirectedGraph, pacman: 'Pacman') -> None:
         '''
         Update player target position given the board graph and current Pacman position
 
         :param graph: board graph
-        :param pacman_pos: Pacman intermediate position w.r.t. board, in cells
+        :param pacman: Pacman instance
         '''
-
-        data = self._get_bfs_data(graph, pacman_pos)
-        ...
-        self._update_direction()
 
 
 @attr.s(slots=True, kw_only=True)
@@ -463,12 +478,12 @@ class Pacman(Player):
         else:
             pass
 
-    def update_target(self, graph: UndirectedGraph, pacman_pos: Vector2) -> None:
+    def update_target(self, graph: UndirectedGraph, pacman: 'Pacman') -> None:
         '''
         Update player target position given the board graph and current Pacman position
 
         :param graph: board graph
-        :param pacman_pos: Pacman intermediate position w.r.t. board, in cells
+        :param pacman: Pacman instance
         '''
 
         keys = pygame.key.get_pressed()
