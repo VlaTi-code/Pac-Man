@@ -135,8 +135,7 @@ class Player(AnimatedSprite):
         '''Update direction vector according to current target position'''
 
         offset = self.target_pos - self.real_pos
-        if is_almost_zero(offset):
-            self.precise_align()
+        if is_almost_zero(offset):  # arrival
             self.direction = Vector2()
             return
 
@@ -170,7 +169,10 @@ class Player(AnimatedSprite):
 
         super().step(delta_time)  # sprite animation
 
-        self.real_pos += self.speed * delta_time * self.direction
+        if self.is_aligned():
+            self.precise_align()
+        else:
+            self.real_pos += self.speed * delta_time * self.direction
 
 
 class GhostState(Enum):
@@ -186,20 +188,36 @@ class GhostGangAI(Player):
 
     state: GhostState = attr.ib(default=GhostState.SCATTER, init=False)
     state_timer: float = attr.ib(default=0, init=False)
+    last_direction: Vector2 = attr.ib(default=None, init=False)
 
     # TODO: implement AI strategies
-    # restrict opposite moves for AI
 
     def __attrs_post_init__(self) -> None:
         '''Post-initialization'''
 
         super().__attrs_post_init__()
 
-    def _reconstruct_path(self, data: BFSData, target: Vertex) -> Vertex:
-        '''
-        '''
+    def _update_direction(self) -> None:
+        '''Update direction vector according to current target position'''
 
-        ...
+        super()._update_direction()
+
+        if not is_zero(self.direction):
+            self.last_direction = self.direction
+
+    def _get_possible_directions(self, graph: UndirectedGraph) -> list[Vertex]:
+        if not self.is_aligned():
+            return []
+
+        vertex = Vertex.from_vector(self.real_pos)
+        directions = list(filter(
+            lambda vec: -vec != self.last_direction,
+            [
+                neighbour.to_vector() - self.real_pos
+                for neighbour in graph[vertex]
+            ],
+        ))
+        return directions
 
     def _get_bfs_data(self, graph: UndirectedGraph, pacman_pos: Vector2) -> BFSData:
         '''
@@ -264,9 +282,16 @@ class Blinky(GhostGangAI):
         :param pacman_pos: Pacman intermediate position w.r.t. board, in cells
         '''
 
-        data = self._get_bfs_data(graph, pacman_pos)
-        ...
-        self._update_direction()
+        directions = self._get_possible_directions(graph)
+        if not directions:
+            self._update_direction()
+            return
+
+        self.direction = min(
+            directions,
+            key=lambda vec: (self.real_pos + vec - pacman_pos).length_squared(),
+        )
+        self.target_pos = self.real_pos + self.direction
 
 
 @attr.s(slots=True, kw_only=True)
