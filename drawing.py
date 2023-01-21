@@ -1,6 +1,7 @@
 import pygame
 from settings import *
 from button import Button
+from level_1_sprites import *
 
 
 pygame.init()
@@ -9,6 +10,7 @@ pygame.init()
 class Drawing(object):
     def __init__(self, screen):
         self.screen = screen
+        self.font = pygame.font.SysFont('Arial', 36)
 
     def drawing_main_menu(self, color_count):
         text_surface = pygame.Surface((WIDTH, 275))
@@ -36,19 +38,19 @@ class Drawing(object):
         button_surface.blit(text_button, pos)
         self.screen.blit(button_surface, (button.x, button.y))
 
-    def drawing_settings(self):
-        pass
+    def drawing_level(self, level, player):
+        if level == 1:
+            points_sprites.draw(self.screen)
+            all_sprites_1.draw(self.screen)
+            pygame.draw.rect(self.screen, BLACK, (0, 265, 15, 50))
+            pygame.draw.rect(self.screen, BLACK, (540, 265, 20, 50))
+            pygame.draw.rect(self.screen, BLUE, (0, 0, 560, 620), 5)
 
-    def drawing_pause(self):
-        pass
+            score = str(player.score)
+            render = self.font.render(score, False, RED)
+            self.screen.blit(render, (WIDTH - 100, 5))
 
-    def drawing_map(self, walls_map_level, points_map_level):
-        self.screen.fill(BLACK)
-        for i in walls_map_level:
-            self.screen.blit(WALLS_NUMBERS[i[2]], (i[0], i[1]))
-
-    def drawing_player(self, player):
-        img = pygame.transform.scale(PLAYER_IMAGES[int((player.x + player.y)) % 2], (20, 20))
-        pos = img.get_rect(center=(TILE // 2, TILE // 2))
-        player.surface.blit(img, pos)
-        self.screen.blit(player.surface, (player.x, player.y))
+    def drawing_fps(self, clock):
+        display_fps = str(int(clock.get_fps()))
+        render = self.font.render(display_fps, False, RED)
+        self.screen.blit(render, (WIDTH - 40, 5))
